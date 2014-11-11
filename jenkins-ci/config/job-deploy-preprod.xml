@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>ARTIFACT_VERSION</name>
+          <description></description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <se.diabol.jenkins.pipeline.PipelineProperty plugin="delivery-pipeline-plugin@0.8.6">
+      <taskName>Deploy to PREPROD</taskName>
+      <stageName>PREPROD</stageName>
+    </se.diabol.jenkins.pipeline.PipelineProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>true</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <jenkins.triggers.ReverseBuildTrigger>
+      <spec></spec>
+      <upstreamProjects>ticket-monster-test-perf, ticket-monster-test-sys, </upstreamProjects>
+      <threshold>
+        <name>SUCCESS</name>
+        <ordinal>0</ordinal>
+        <color>BLUE</color>
+        <completeBuild>true</completeBuild>
+      </threshold>
+    </jenkins.triggers.ReverseBuildTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <org.jenkinsci.plugins.openshift.DeployApplication plugin="openshift-deployer@1.0.4">
+      <serverName>openshift</serverName>
+      <cartridges>jbosseap-6</cartridges>
+      <domain></domain>
+      <gearProfile>small</gearProfile>
+      <appName>preprodticketmonster</appName>
+      <deploymentPath>http://nexus:8081/nexus/service/local/artifact/maven/redirect?r=releases&amp;g=org.jboss.examples&amp;a=ticket-monster&amp;v=${ENV,var=&quot;ARTIFACT_VERSION&quot;}&amp;e=war</deploymentPath>
+    </org.jenkinsci.plugins.openshift.DeployApplication>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

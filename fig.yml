@@ -1,0 +1,18 @@
+sonar:
+  image: siamaksade/sonar
+  ports:
+    - "9000:9000"
+nexus:
+  image: siamaksade/nexus
+  ports:
+    - "8081:8081"
+jenkins:
+  build: ./jenkins-ci
+  links:
+     - nexus:nexus
+     - sonar:sonar
+  volumes:
+   - /Users/ssadeghi/Projects/docker-volume:/data/host
+  ports:
+    - "8080:8080"
+

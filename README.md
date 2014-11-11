@@ -1,2 +1,2 @@
-openshift-cd-demo
+Continuous Delivery Demo on OpenShift
 =================

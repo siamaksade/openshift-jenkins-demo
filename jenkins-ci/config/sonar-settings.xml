@@ -1,0 +1,24 @@
+
+<?xml version='1.0' encoding='UTF-8'?>
+<hudson.plugins.sonar.SonarPublisher_-DescriptorImpl plugin="sonar@2.1">
+  <installations>
+    <hudson.plugins.sonar.SonarInstallation>
+      <name>Sonar</name>
+      <disabled>false</disabled>
+      <serverUrl>http://sonar:9000</serverUrl>
+      <mojoVersion></mojoVersion>
+      <databaseUrl>jdbc:postgresql://sonar:5432/sonar</databaseUrl>
+      <databaseDriver>org.postgresql.Driver</databaseDriver>
+      <databaseLogin></databaseLogin>
+      <databasePassword></databasePassword>
+      <additionalProperties></additionalProperties>
+      <triggers>
+        <skipScmCause>false</skipScmCause>
+        <skipUpstreamCause>false</skipUpstreamCause>
+        <envVar></envVar>
+      </triggers>
+      <sonarLogin>admin</sonarLogin>
+      <sonarPassword>YWRtaW4=</sonarPassword>
+    </hudson.plugins.sonar.SonarInstallation>
+  </installations>
+</hudson.plugins.sonar.SonarPublisher_-DescriptorImpl>
