@@ -11,8 +11,6 @@ jenkins:
   links:
      - nexus:nexus
      - sonar:sonar
-  volumes:
-   - /Users/ssadeghi/Projects/docker-volume:/data/host
   ports:
     - "8080:8080"
 
