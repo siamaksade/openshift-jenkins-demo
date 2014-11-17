@@ -4,7 +4,7 @@
 #                                                                     #
 #######################################################################
 
-FROM siamaksade/jenkins
+FROM siamaksade/jenkins:1.587
 
 MAINTAINER Siamak Sadeghianfar <ssadeghi@redhat.com>
 
