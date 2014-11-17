@@ -31,7 +31,6 @@
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <triggers/>
   <concurrentBuild>false</concurrentBuild>
-  <builders/>
   <publishers>
     <hudson.plugins.parameterizedtrigger.BuildTrigger plugin="parameterized-trigger@2.25">
       <configs>
@@ -67,8 +66,6 @@
   <settings class="jenkins.mvn.DefaultSettingsProvider"/>
   <globalSettings class="jenkins.mvn.DefaultGlobalSettingsProvider"/>
   <reporters/>
-  <publishers>
-  </publishers>
   <buildWrappers/>
   <prebuilders/>
   <postbuilders/>
