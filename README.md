@@ -1,7 +1,7 @@
 Continuous Delivery Demo on OpenShift
 =================
 
-This demo sets up a complete Continuous Delivery environment running in Docker containers and uses OpenShift as the deployment environment. As the artifact moves forward in the delivery pipeline, new containers (gears) are created on OpenShift and the artifact gets deployed onto these containers which represent Dev, System Test, Performance Test and Pre-Production environments. 
+This demo sets up a complete Continuous Delivery environment running in Docker containers and uses OpenShift as the deployment environment. As the artifact moves forward in the delivery pipeline, new containers (gears) are created on OpenShift and the artifact gets deployed onto these containers which represent _Dev_, _System Test_, _Performance Test_ and _Pre-Production_ environments. 
 
 This demo uses Fig as a simple orchestration tool to create the Docker containers required for this demo. Docker is used for simplicity in this demo and is not essential to the delivery pipeline.
 
@@ -9,20 +9,20 @@ Infrastructure
 ======
 This demo uses the following components to create the delivery pipeline. Jenkins, Nexus and Sonar run in their own Docker containers while BitBucket is used as an external Git-based source repository.
 
-**Jenkins**
+##### Jenkins
 Description: continuous delivery orchestration engine
 Address: http://DOCKER_HOST:8080/jenkins
 
-**Sonatype Nexus**
+##### Sonatype Nexus
 Description: artifact repository for archiving release binaries
 Address: http://DOCKER_HOST:8081/nexus
 
 
-**SonarQube**
+##### SonarQube
 Description: static code analysis engine extracting various quality metrics from the code
 Address: http://DOCKER_HOST:9000
 
-**Git**
+##### Git
 Description: source repository hosting the ticket-monster Java application
 Address: https://rhdemoss@bitbucket.org/rhdemoss/ticketmonster-openshift.git
 
