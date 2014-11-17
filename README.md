@@ -27,43 +27,37 @@ Address: https://rhdemoss@bitbucket.org/rhdemoss/ticketmonster-openshift.git
 
 Note: if running _boot2docker_ on Mac OSX, _DOCKER_HOST_ is the ip of boot2docker virtual machine. 
 
-
-
 Delivery Pipeline
 =================
 The delivery pipeline in this demo is divided into five phases each containing a number of activities (jobs) that need to succeed in order to promote the artefact to the next phase. Each change in the application is a potential production release according to Continuous Delivery principles and can go in production if it successfully passes through all the phases in the pipeline.
 
 1. Build: compilation and unit test, integration tests and static code analysis
-2. Dev: release to Nexus, release tag in Git, deploy to DEV server (on OpenShift) and running functional tests
+2. Dev: release to Nexus, create release tag in Git, deploy to DEV server (on OpenShift) and running functional tests
 3. System Test: deploy to System Test server (on OpenShift) and running system tests
 4. Perf Test: deploy to Performance Test server (on OpenShift) and running performance tests
 5. Pre Production (Stage): deploy to Pre-Production server (on OpenShift)
 
-[TBA: image of delivery pipeline in Jenkins]
+![Delivery Pipeline](https://raw.githubusercontent.com/siamaksade/openshift-cd-demo/master/images/delivery-pipeline.png)
 
 Instructions
 ============
-1. Install Fig
-[TBA: link to Fig installation page]
-
-2. Clone the git repo
+1. Install [Fig](http://www.fig.sh) by following [these instructions](http://www.fig.sh/install.html)  
+2. Clone Continuous Delivery demo git repo
 
    ```
    git clone https://github.com/siamaksade/openshift-cd-demo
    cd openshift-cd-demo
    ```
 
-3. Start the environment
+3. Start the containers
    ```
    fig up -d
    ```
    This step will download the required Docker images from Docker registery and start Jenkins, Nexus and Sonar containers. Depending on your internet connection, it might take some minutes.
-
 4. Browse to http://DOCKER_HOST:8080/jenkins and go to _Manage Jenkins > Configure System_. Scroll down to _OpenShift_ section and enter your OpenShift configs. If using OpenShift Online, enter your username and password in the respective textboxes. If using OpenShift Enterprise, also enter the address to your broker. Click on "Check Login" to validate your username and password. If successfull, click on "Upload SSH Public Key" to upload the Jenkins SSH keys to OpenShift.
 
-   [TBA: image of openshift config]
+  ![Jenkins Config](https://raw.githubusercontent.com/siamaksade/openshift-cd-demo/master/images/jenkins-config.png)
 
-5. Go to jobs list and start the _ticket-monster-build_ job by clicking on the play icon.
-
-6. Go to the _Delivery Pipeline_ to see how the build progresses in the delivery pipeline.
+5. Go to jobs list and start the _ticket-monster-build_ job.
+6. Go to the _Delivery Pipeline_ tab to see how the build progresses in the delivery pipeline.
 
