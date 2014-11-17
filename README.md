@@ -9,22 +9,21 @@ Infrastructure
 ======
 This demo uses the following components to create the delivery pipeline. Jenkins, Nexus and Sonar run in their own Docker containers while BitBucket is used as an external Git-based source repository.
 
-##### Jenkins
-Description: continuous delivery orchestration engine
+**Jenkins**  
+Description: continuous delivery orchestration engine  
 Address: http://DOCKER_HOST:8080/jenkins
 
-##### Sonatype Nexus
-Description: artifact repository for archiving release binaries
-Address: http://DOCKER_HOST:8081/nexus
+**Sonatype Nexus**  
+Description: artifact repository for archiving release binaries  
+Address: http://DOCKER_HOST:8081/nexus  
 
+**SonarQube**  
+Description: static code analysis engine extracting various quality metrics from the code  
+Address: http://DOCKER_HOST:9000  
 
-##### SonarQube
-Description: static code analysis engine extracting various quality metrics from the code
-Address: http://DOCKER_HOST:9000
-
-##### Git
-Description: source repository hosting the ticket-monster Java application
-Address: https://rhdemoss@bitbucket.org/rhdemoss/ticketmonster-openshift.git
+**Git**  
+Description: source repository hosting the ticket-monster Java application  
+Address: https://rhdemoss@bitbucket.org/rhdemoss/ticketmonster-openshift.git  
 
 Note: if running _boot2docker_ on Mac OSX, _DOCKER_HOST_ is the ip of boot2docker virtual machine. 
 
@@ -67,5 +66,4 @@ Instructions
 5. Go to jobs list and start the _ticket-monster-build_ job by clicking on the play icon.
 
 6. Go to the _Delivery Pipeline_ to see how the build progresses in the delivery pipeline.
-
 
