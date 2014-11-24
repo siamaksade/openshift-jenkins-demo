@@ -3,7 +3,7 @@ sonar:
   ports:
     - "9000:9000"
 nexus:
-  image: siamaksade/nexus
+  image: siamaksade/nexus:2.8.1
   ports:
     - "8081:8081"
 jenkins:
