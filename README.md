@@ -3,6 +3,8 @@ Continuous Delivery Demo on OpenShift
 
 This demo sets up a complete Continuous Delivery environment running in Docker containers and uses OpenShift as the deployment environment. As the artifact moves forward in the delivery pipeline, new containers (gears) are created on OpenShift and the artifact gets deployed onto these containers which represent _Dev_, _System Test_, _Performance Test_ and _Pre-Production_ environments. 
 
+![](https://raw.githubusercontent.com/siamaksade/openshift-cd-demo/master/images/cd-openshift.png)
+
 This demo uses Fig as a simple orchestration tool to create the Docker containers required for this demo. Docker is used for simplicity in this demo and is not essential to the delivery pipeline.
 
 Infrastructure
