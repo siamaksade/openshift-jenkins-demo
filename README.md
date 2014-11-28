@@ -43,6 +43,7 @@ The delivery pipeline in this demo is divided into five phases each containing a
 
 Instructions
 ============
+
 1. Install [Fig](http://www.fig.sh) by following [these instructions](http://www.fig.sh/install.html)  
 2. Clone Continuous Delivery demo git repo
 
@@ -63,3 +64,4 @@ Instructions
 5. Go to jobs list and start the _ticket-monster-build_ job.
 6. Go to the _Delivery Pipeline_ tab to see how the build progresses in the delivery pipeline.
 
+There is a sreencast available on [Vimeo](https://vimeo.com/113075954) demonstrating the above setup.
