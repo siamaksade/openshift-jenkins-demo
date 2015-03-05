@@ -44,7 +44,7 @@ The delivery pipeline in this demo is divided into five phases each containing a
 Instructions
 ============
 
-1. Install [Fig](http://www.fig.sh) by following [these instructions](http://www.fig.sh/install.html)  
+1. Install [Docker Compose](https://docs.docker.com/compose/install/)
 2. Clone Continuous Delivery demo git repo
 
    ```
@@ -54,7 +54,7 @@ Instructions
 
 3. Start the containers
    ```
-   fig up -d
+   docker-compose up -d
    ```
    This step will download the required Docker images from Docker registery and start Jenkins, Nexus and Sonar containers. Depending on your internet connection, it might take some minutes.
 4. Browse to http://DOCKER_HOST:8080/jenkins and go to _Manage Jenkins > Configure System_. Scroll down to _OpenShift_ section and enter your OpenShift configs. If using OpenShift Online, enter your username and password in the respective textboxes. If using OpenShift Enterprise, also enter the address to your broker. Click on "Check Login" to validate your username and password. If successfull, click on "Upload SSH Public Key" to upload the Jenkins SSH keys to OpenShift.
