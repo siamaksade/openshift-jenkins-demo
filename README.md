@@ -9,7 +9,7 @@ This demo uses Fig as a simple orchestration tool to create the Docker container
 
 Infrastructure
 ======
-This demo uses the following components to create the delivery pipeline. Jenkins, Nexus and Sonar run in their own Docker containers while BitBucket is used as an external Git-based source repository.
+This demo uses the following components to create the delivery pipeline. Jenkins, Nexus and Sonar run in their own Docker containers while GitHub is used as an external Git-based source repository.
 
 **Jenkins**  
 Description: continuous delivery orchestration engine  
@@ -25,7 +25,7 @@ Address: http://DOCKER_HOST:9000
 
 **Git**  
 Description: source repository hosting the ticket-monster Java application  
-Address: https://rhdemoss@bitbucket.org/rhdemoss/ticketmonster-openshift.git  
+Address: [https://github.com/rhdemoss/ticketmonster-openshift.git](https://github.com/rhdemoss/ticketmonster-openshift.git)
 
 Note: if running _boot2docker_ on Mac OSX, _DOCKER_HOST_ is the ip of boot2docker virtual machine. 
 

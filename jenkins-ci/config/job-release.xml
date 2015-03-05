@@ -13,7 +13,7 @@
     <configVersion>2</configVersion>
     <userRemoteConfigs>
       <hudson.plugins.git.UserRemoteConfig>
-        <url>https://rhdemoss@bitbucket.org/rhdemoss/ticketmonster-openshift.git</url>
+        <url>https://github.com/rhdemoss/ticketmonster-openshift.git</url>
       </hudson.plugins.git.UserRemoteConfig>
     </userRemoteConfigs>
     <branches>
@@ -39,7 +39,7 @@
     <groupId>org.jboss.examples</groupId>
     <artifactId>ticket-monster</artifactId>
   </rootModule>
-  <goals>release:prepare release:perform --batch-mode -Dpassword=openshiftrocks</goals>
+  <goals>release:prepare release:perform --batch-mode</goals>
   <aggregatorStyleBuild>true</aggregatorStyleBuild>
   <incrementalBuild>false</incrementalBuild>
   <ignoreUpstremChanges>true</ignoreUpstremChanges>
