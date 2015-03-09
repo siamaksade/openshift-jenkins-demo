@@ -3,7 +3,7 @@ Continuous Delivery Demo on OpenShift
 
 This demo sets up a complete Continuous Delivery environment running in Docker containers and uses OpenShift as the deployment environment. As the artifact moves forward in the delivery pipeline, new containers (gears) are created on OpenShift and the artifact gets deployed onto these containers which represent _Dev_, _System Test_, _Performance Test_ and _Pre-Production_ environments. 
 
-![](https://raw.githubusercontent.com/siamaksade/openshift-cd-demo/master/images/cd-openshift.png)
+![](https://raw.githubusercontent.com/jbossdemocentral/continuous-delivery-demo/master/images/cd-openshift.png)
 
 This demo uses Fig as a simple orchestration tool to create the Docker containers required for this demo. Docker is used for simplicity in this demo and is not essential to the delivery pipeline.
 
@@ -25,7 +25,7 @@ Address: http://DOCKER_HOST:9000
 
 **Git**  
 Description: source repository hosting the ticket-monster Java application  
-Address: [https://github.com/rhdemoss/ticketmonster-openshift.git](https://github.com/rhdemoss/ticketmonster-openshift.git)
+Address: [https://github.com/jbossdemocentral/continuous-delivery-demo-app.git](https://github.com/jbossdemocentral/continuous-delivery-demo-app.git)
 
 Note: if running _boot2docker_ on Mac OSX, _DOCKER_HOST_ is the ip of boot2docker virtual machine. 
 
@@ -39,7 +39,7 @@ The delivery pipeline in this demo is divided into five phases each containing a
 4. Perf Test: deploy to Performance Test server (on OpenShift) and running performance tests
 5. Pre Production (Stage): deploy to Pre-Production server (on OpenShift)
 
-![Delivery Pipeline](https://raw.githubusercontent.com/siamaksade/openshift-cd-demo/master/images/delivery-pipeline.png)
+![Delivery Pipeline](https://raw.githubusercontent.com/jbossdemocentral/continuous-delivery-demo/master/images/delivery-pipeline.png)
 
 Instructions
 ============
@@ -48,7 +48,7 @@ Instructions
 2. Clone Continuous Delivery demo git repo
 
    ```
-   git clone https://github.com/siamaksade/openshift-cd-demo
+   git clone https://github.com/jbossdemocentral/continuous-delivery-demo.git
    cd openshift-cd-demo
    ```
 
@@ -59,7 +59,7 @@ Instructions
    This step will download the required Docker images from Docker registery and start Jenkins, Nexus and Sonar containers. Depending on your internet connection, it might take some minutes.
 4. Browse to http://DOCKER_HOST:8080/jenkins and go to _Manage Jenkins > Configure System_. Scroll down to _OpenShift_ section and enter your OpenShift configs. If using OpenShift Online, enter your username and password in the respective textboxes. If using OpenShift Enterprise, also enter the address to your broker. Click on "Check Login" to validate your username and password. If successfull, click on "Upload SSH Public Key" to upload the Jenkins SSH keys to OpenShift.
 
-  ![Jenkins Config](https://raw.githubusercontent.com/siamaksade/openshift-cd-demo/master/images/jenkins-config.png)
+  ![Jenkins Config](https://raw.githubusercontent.com/jbossdemocentral/continuous-delivery-demo/master/images/jenkins-config.png)
 
 5. Go to jobs list and start the _ticket-monster-build_ job.
 6. Go to the _Delivery Pipeline_ tab to see how the build progresses in the delivery pipeline.
