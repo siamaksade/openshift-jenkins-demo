@@ -10,10 +10,9 @@ MAINTAINER Siamak Sadeghianfar <ssadeghi@redhat.com>
 
 # Copy SSH Key Pair
 ADD config/.ssh /var/lib/jenkins/.ssh
-#RUN mkdir -p /var/lib/jenkins/.ssh
-#RUN ssh-keygen -t rsa -q -N "" -f /var/lib/jenkins/.ssh/id_rsa
 RUN chown -R jenkins:jenkins /var/lib/jenkins/.ssh/
 RUN chmod 755 /var/lib/jenkins/.ssh/
+RUN chmod 600 /var/lib/jenkins/.ssh/id_rsa*
 
 # Install Plugins
 RUN wget -O /var/lib/jenkins/plugins/openshift-deployer.hpi 		http://updates.jenkins-ci.org/download/plugins/openshift-deployer/1.2.0/openshift-deployer.hpi
