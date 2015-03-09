@@ -16,7 +16,7 @@ RUN chown -R jenkins:jenkins /var/lib/jenkins/.ssh/
 RUN chmod 755 /var/lib/jenkins/.ssh/
 
 # Install Plugins
-RUN wget -O /var/lib/jenkins/plugins/openshift-deployer.hpi 		http://updates.jenkins-ci.org/download/plugins/openshift-deployer/1.0.4/openshift-deployer.hpi
+RUN wget -O /var/lib/jenkins/plugins/openshift-deployer.hpi 		http://updates.jenkins-ci.org/download/plugins/openshift-deployer/1.2.0/openshift-deployer.hpi
 RUN wget -O /var/lib/jenkins/plugins/build-pipeline-plugin.hpi 		http://updates.jenkins-ci.org/download/plugins/build-pipeline-plugin/1.4.3/build-pipeline-plugin.hpi
 RUN wget -O /var/lib/jenkins/plugins/jquery.hpi 					http://updates.jenkins-ci.org/download/plugins/jquery/1.7.2-1/jquery.hpi
 RUN wget -O /var/lib/jenkins/plugins/parameterized-trigger.hpi 		http://updates.jenkins-ci.org/download/plugins/parameterized-trigger/2.25/parameterized-trigger.hpi

@@ -26,13 +26,17 @@
   <triggers/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
-    <org.jenkinsci.plugins.openshift.DeployApplication plugin="openshift-deployer@1.0.4">
+    <org.jenkinsci.plugins.openshift.DeployApplication plugin="openshift-deployer@1.2.0">
       <serverName>openshift</serverName>
       <cartridges>jbosseap-6</cartridges>
-      <domain></domain>
+      <domain>smx</domain>
       <gearProfile>small</gearProfile>
       <appName>systicketmonster</appName>
-      <deploymentPath>http://nexus:8081/nexus/service/local/artifact/maven/redirect?r=releases&amp;g=org.jboss.examples&amp;a=ticket-monster&amp;v=${ENV,var=&quot;ARTIFACT_VERSION&quot;}&amp;e=war</deploymentPath>
+      <deploymentPackage>http://nexus:8081/nexus/service/local/artifact/maven/redirect?r=releases&amp;g=org.jboss.examples&amp;a=ticket-monster&amp;v=${ENV,var=&quot;ARTIFACT_VERSION&quot;}&amp;e=war</deploymentPackage>
+      <environmentVariables></environmentVariables>
+      <autoScale>false</autoScale>
+      <deploymentType>GIT</deploymentType>
+      <openshiftDirectory>src/main/resources/openshift</openshiftDirectory>
     </org.jenkinsci.plugins.openshift.DeployApplication>
   </builders>
   <publishers>
