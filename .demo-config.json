@@ -13,7 +13,7 @@
   "links": [ 
     {
       "name":"Code",
-      "url":"https://github.com/tqvarnst/docker-images/tree/master/demo-cd"
+      "url":"https://github.com/jbossdemocentral/continuous-delivery-demo"
     }
   ]
 }
