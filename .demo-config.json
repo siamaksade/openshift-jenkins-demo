@@ -4,7 +4,7 @@
   "author":"Thomas Qvarnstrom & Siamak Sadeghianfar",
   "category":"eap",
   "level":"Advanced",
-  "published":false,
+  "published":true,
   "prerequisites":"Docker natively or boot2docker (or similar)",
   "targetProduct":"JBoss EAP",
   "productVersion":"JBoss EAP 6.3",
