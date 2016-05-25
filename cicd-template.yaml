@@ -1,0 +1,186 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: cicd
+labels:
+  template: cicd
+metadata:
+  annotations:
+    description: Creates the CI/CD infrastructure with Jenins, Nexus, etc
+    iconClass: icon-jenkins
+    tags: instant-app,jenkins,cicd
+  name: cicd
+parameters:
+- description: Password for the Jenkins user.
+  displayName: Jenkins Password
+  generate: expression
+  name: JENKINS_PASSWORD
+  value: password
+objects:
+# Jenkins Master
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: jenkins
+    name: jenkins
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: jenkins
+    name: jenkins
+  spec:
+    ports:
+    - name: web
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: jnlp
+      port: 50000
+      protocol: TCP
+      targetPort: 50000
+    selector:
+      app: jenkins
+      deploymentconfig: jenkins
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: jenkins
+    name: jenkins
+  spec:
+    port:
+      targetPort: 8080
+    to:
+      kind: Service
+      name: jenkins
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: jenkins
+    name: jenkins
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: jenkins:latest
+    resources:
+      limits:
+        memory: 1Gi
+    source:
+      contextDir: jenkins-master
+      git:
+        uri: https://github.com/siamaksade/openshift-cd-demo.git
+        ref: openshift-3.x
+      secrets: []
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: jenkins:1
+          namespace: openshift
+      type: Source
+    triggers:
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: jenkins
+    name: jenkins
+  spec:
+    replicas: 1
+    selector:
+      app: jenkins
+      deploymentconfig: jenkins
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: jenkins
+          deploymentconfig: jenkins
+      spec:
+        containers:
+        - env:
+          - name: JENKINS_PASSWORD
+            value: ${JENKINS_PASSWORD}
+          image: jenkins
+          imagePullPolicy: Always
+          name: jenkins
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 50000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/jenkins
+            name: jenkins-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: jenkins-data
+          emptyDir:
+            medium: ""
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - jenkins
+        from:
+          kind: ImageStreamTag
+          name: jenkins:latest
+      type: ImageChange
+# Jenkins Slave
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      slave-directory: /var/lib/jenkins
+      slave-label: ${SLAVE_LABEL}
+    labels:
+      role: jenkins-slave
+    name: ${SLAVE_LABEL}-jenkins-slave
+  spec: {}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Builds Jenkins slave image with JDK
+    labels:
+      name: jdk-slave
+    name: jdk-jenkins-slave
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: jdk-jenkins-slave:latest
+    source:
+      contextDir: jenkins-slave
+      git:
+        uri: https://github.com/siamaksade/openshift-cd-demo.git
+        ref: openshift-3.x
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: rhel7/rhel
+      type: Docker
+    triggers:
+    - type: ConfigChange

@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<hudson.tasks.Maven_-DescriptorImpl>
+  <installations>
+    <hudson.tasks.Maven_-MavenInstallation>
+      <name>M3</name>
+      <properties>
+        <hudson.tools.InstallSourceProperty>
+          <installers>
+            <hudson.tasks.Maven_-MavenInstaller>
+              <id>3.3.9</id>
+            </hudson.tasks.Maven_-MavenInstaller>
+          </installers>
+        </hudson.tools.InstallSourceProperty>
+      </properties>
+    </hudson.tasks.Maven_-MavenInstallation>
+  </installations>
+</hudson.tasks.Maven_-DescriptorImpl>
