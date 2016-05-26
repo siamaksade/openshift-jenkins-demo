@@ -165,10 +165,10 @@ objects:
   metadata:
     annotations:
       slave-directory: /var/lib/jenkins
-      slave-label: ${SLAVE_LABEL}
+      slave-label: jdk8
     labels:
       role: jenkins-slave
-    name: ${SLAVE_LABEL}-jenkins-slave
+    name: jdk8-jenkins-slave
   spec: {}
 - apiVersion: v1
   kind: BuildConfig
