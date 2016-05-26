@@ -4,11 +4,12 @@ metadata:
   name: cicd
 labels:
   template: cicd
+  group: cicd
 metadata:
   annotations:
-    description: Creates the CI/CD infrastructure with Jenins, Nexus, etc
+    description: Creates the CI/CD infrastructure with Jenins, Gogs, Nexus, etc
     iconClass: icon-jenkins
-    tags: instant-app,jenkins,cicd
+    tags: instant-app,jenkins,gogs,nexus,cicd
   name: cicd
 parameters:
 - description: Password for the Jenkins user.
@@ -16,6 +17,18 @@ parameters:
   generate: expression
   name: JENKINS_PASSWORD
   value: password
+- description: Username for Gogs Git Server PostgreSQL backend
+  displayName: Gogs's PostgreSQL User
+  from: user[A-Z0-9]{3}
+  generate: expression
+  name: GOGS_POSTGRESQL_USER
+  required: true
+- description: Password for Gogs Git Server PostgreSQL backend
+  displayName: Gog's PostgreSQL Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: GOGS_POSTGRESQL_PASSWORD
+  required: true
 objects:
 # Jenkins Master
 - apiVersion: v1
@@ -184,3 +197,302 @@ objects:
       type: Docker
     triggers:
     - type: ConfigChange
+# Sonatype Nexus
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Sonatype Nexus repository manager's http port
+    labels:
+      app: nexus
+    name: nexus
+  spec:
+    ports:
+    - name: web
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    selector:
+      app: nexus
+      deploymentconfig: nexus
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: nexus
+    name: nexus
+  spec:
+    port:
+      targetPort: web
+    to:
+      kind: Service
+      name: nexus
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: nexus
+    name: nexus
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: nexus
+    name: nexus
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: nexus:latest
+    source:
+      contextDir: nexus
+      git:
+        ref: openshift-3.x
+        uri: https://github.com/siamaksade/openshift-cd-demo.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: nexus:2.13.0-01
+      type: Docker
+    triggers:
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: nexus
+    name: nexus
+  spec:
+    replicas: 1
+    selector:
+      app: nexus
+      deploymentconfig: nexus
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: nexus
+          deploymentconfig: nexus
+      spec:
+        containers:
+        - image: nexus
+          imagePullPolicy: Always
+          name: nexus
+          ports:
+          - containerPort: 8081
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /opt/nexus-work
+            name: nexus-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: nexus-data
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nexus
+        from:
+          kind: ImageStreamTag
+          name: nexus:latest
+      type: ImageChange
+  status: {}
+# gogs
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: The Gogs server's http port
+    labels:
+      app: gogs
+    name: gogs
+  spec:
+    ports:
+    - name: web
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+    selector:
+      app: gogs
+      deploymentconfig: gogs
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: postgresql-gogs
+    labels:
+      app: gogs
+  spec:
+    ports:
+    - name: postgresql
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+    selector:
+      app: gogs
+      deploymentconfig: postgresql-gogs
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      description: Route for gogs's http service.
+    name: gogs
+    labels:
+      app: gogs
+  spec:
+    to:
+      kind: Service
+      name: gogs
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: gogs
+    labels:
+      app: gogs
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: gogs
+    name: gogs
+  spec:
+    replicas: 1
+    selector:
+      app: gogs
+      deploymentconfig: gogs
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: gogs
+          deploymentconfig: gogs
+      spec:
+        containers:
+        - image: thoraxe/gogs
+          imagePullPolicy: Always
+          name: gogs
+          ports:
+          - containerPort: 3000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - gogs
+        from:
+          kind: ImageStreamTag
+          name: gogs:latest
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: gogs
+      deploymentconfig: postgresql-gogs
+    name: postgresql-gogs
+  spec:
+    replicas: 1
+    selector:
+      app: gogs
+      deploymentconfig: postgresql-gogs
+    strategy:
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: gogs
+          deploymentconfig: postgresql-gogs
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_USER
+            value: ${GOGS_POSTGRESQL_USER}
+          - name: POSTGRESQL_PASSWORD
+            value: ${GOGS_POSTGRESQL_PASSWORD}
+          - name: POSTGRESQL_DATABASE
+            value: gogsdb
+          image: registry.access.redhat.com/rhscl/postgresql-94-rhel7:latest
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 5432
+            timeoutSeconds: 1
+          name: postgresql-gogs
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c
+                'SELECT 1'
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: postgresql-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: postgresql-data
+    triggers:
+    - imageChangeParams:
+        containerNames:
+        - postgresql
+        from:
+          kind: ImageStreamTag
+          name: postgresql:latest
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+  status: {}

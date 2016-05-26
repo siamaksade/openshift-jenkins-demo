@@ -1,6 +1,8 @@
 # The FROM will be replaced when building in OpenShift
 FROM rhel7/rhel
 
+MAINTAINER Siamak Sadeghianfar <ssadeghi@redhat.com>
+
 # Install headless Java
 USER root
 RUN yum clean all && \
