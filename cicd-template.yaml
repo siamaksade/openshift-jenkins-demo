@@ -236,33 +236,6 @@ objects:
       app: nexus
     name: nexus
 - apiVersion: v1
-  kind: BuildConfig
-  metadata:
-    labels:
-      app: nexus
-    name: nexus
-  spec:
-    output:
-      to:
-        kind: ImageStreamTag
-        name: nexus:latest
-    source:
-      contextDir: nexus
-      git:
-        ref: openshift-3.x
-        uri: https://github.com/siamaksade/openshift-cd-demo.git
-      type: Git
-    strategy:
-      dockerStrategy:
-        from:
-          kind: ImageStreamTag
-          name: nexus:2.13.0-01
-      type: Docker
-    triggers:
-    - type: ConfigChange
-    - imageChange: {}
-      type: ImageChange
-- apiVersion: v1
   kind: DeploymentConfig
   metadata:
     labels:
@@ -282,7 +255,7 @@ objects:
           deploymentconfig: nexus
       spec:
         containers:
-        - image: nexus
+        - image: siamaksade/nexus:2.13.0-01
           imagePullPolicy: Always
           name: nexus
           ports:
@@ -307,7 +280,7 @@ objects:
         - nexus
         from:
           kind: ImageStreamTag
-          name: nexus:latest
+          name: nexus:2.13.0-01
       type: ImageChange
   status: {}
 # gogs
