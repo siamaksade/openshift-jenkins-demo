@@ -168,7 +168,7 @@ objects:
       slave-label: jdk8
     labels:
       role: jenkins-slave
-    name: jdk8-jenkins-slave
+    name: jdk-jenkins-slave
   spec: {}
 - apiVersion: v1
   kind: BuildConfig

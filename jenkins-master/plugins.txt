@@ -1,6 +1,15 @@
 git:2.4.4
+git-server:1.5
 scm-api:1.0
 git-client:1.19.6
+structs:1.1
+jquery-detached:1.1.1
+momentjs:1.1
+handlebars:1.1
+ace-editor:1.0.1
+cloudbees-folder:5.2.1
+branch-api:1.1
+pipeline-rest-api:1.4
 workflow-aggregator:2.1
 workflow-scm-step:2.0
 pipeline-stage-view:1.3
