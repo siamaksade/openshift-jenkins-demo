@@ -10,10 +10,15 @@
 
    git url: &apos;https://github.com/siamaksade/openshift-tasks.git&apos;
    def mvnHome = tool &apos;M3&apos;
-   sh &quot;${mvnHome}/bin/mvn clean install -s ${env.JENKINS_HOME}/settings.xml&quot;
+   def mvnCmd = &quot;${mvnHome}/bin/mvn -s ${env.JENKINS_HOME}/settings.xml&quot;
+   sh &quot;${mvnCmd} clean install&quot;
 
    stage &apos;Test&apos;
-   sh &quot;${mvnHome}/bin/mvn test -s ${env.JENKINS_HOME}/settings.xml&quot;
+   sh &quot;${mvnCmd} test&quot;
+
+   stage &apos;Push to Nexus&apos;
+   sh &apos;${mvnCmd} deploy&apos;
+
 }</script>
     <sandbox>false</sandbox>
   </definition>
