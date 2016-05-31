@@ -1,4 +1,11 @@
 <settings>
+  <servers>
+     <server>
+        <id>nexus</id>
+        <username>deployment</username>
+        <password>deployment123</password>
+     </server>
+  </servers>
   <mirrors>
     <mirror>
       <!--This sends everything else to /public -->
