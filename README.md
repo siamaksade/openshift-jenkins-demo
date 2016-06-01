@@ -19,16 +19,31 @@ Create the CI/CD compoentns based on the provided template
 Create Dev and Stage projects for Tasks JAX-RS application
 
   ```
-  $ oc new-project tasks-dev --display-name="Tasks - Dev"
-  $ oc new-project tasks-stage --display-name="Tasks - Stage"
+  $ oc new-project dev --display-name="Tasks - Dev"
+  $ oc new-project stage --display-name="Tasks - Stage"
+  ```
+
+Create the Tasks JAX-RS applications in Dev and Stage projects
+  ```
+  oc new-app jboss-eap64-openshift~https://github.com/siamaksade/openshift-tasks.git --name=tasks -n dev
+  oc expose svc/tasks -n dev
+
+  oc new-app jboss-eap64-openshift~https://github.com/siamaksade/openshift-tasks.git --name=tasks -n stage
+  oc expose svc/tasks -n stage
+  ```
+
+OpenShift immediately starts a build for each project. Optionally you can cancel those builds since we will trigger the builds from Jenkins.
+  ```
+  oc cancel-build tasks-1 -n dev
+  oc cancel-build tasks-1 -n stage
   ```
 
 Jenkins needs to access OpenShift API to discover slave images as well accessing container images. Grant Jenkins service account enough privileges to invoke OpenShift API for the created projects:
 
   ```
   $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n ci
-  $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n tasks-dev
-  $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n tasks-stage
+  $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n dev
+  $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n stage
   ```
 
 # Demo Guide
