@@ -25,17 +25,17 @@ Create Dev and Stage projects for Tasks JAX-RS application
 
 Create the Tasks JAX-RS applications in Dev and Stage projects
   ```
-  oc new-app jboss-eap64-openshift~https://github.com/siamaksade/openshift-tasks.git --name=tasks -n dev
-  oc expose svc/tasks -n dev
+  $ oc new-app jboss-eap64-openshift~https://github.com/siamaksade/openshift-tasks.git --name=tasks -n dev
+  $ oc expose svc/tasks -n dev
 
-  oc new-app jboss-eap64-openshift~https://github.com/siamaksade/openshift-tasks.git --name=tasks -n stage
-  oc expose svc/tasks -n stage
+  $ oc new-app jboss-eap64-openshift~https://github.com/siamaksade/openshift-tasks.git --name=tasks -n stage
+  $ oc expose svc/tasks -n stage
   ```
 
 OpenShift immediately starts a build for each project. Optionally you can cancel those builds since we will trigger the builds from Jenkins.
   ```
-  oc cancel-build tasks-1 -n dev
-  oc cancel-build tasks-1 -n stage
+  $ oc cancel-build tasks-1 -n dev
+  $ oc cancel-build tasks-1 -n stage
   ```
 
 Jenkins needs to access OpenShift API to discover slave images as well accessing container images. Grant Jenkins service account enough privileges to invoke OpenShift API for the created projects:
