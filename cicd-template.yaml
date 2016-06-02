@@ -241,6 +241,16 @@ objects:
     labels:
       app: nexus
     name: nexus
+  spec:
+    tags:
+    - annotations:
+        description: The Nexus Docker image
+        tags: nexus
+      from:
+        kind: DockerImage
+        name: siamaksade/nexus:2.13.0-01
+      importPolicy: {}
+      name: "2.13.0-01"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -261,7 +271,7 @@ objects:
           deploymentconfig: nexus
       spec:
         containers:
-        - image: siamaksade/nexus:2.13.0-01
+        - image: " "
           imagePullPolicy: Always
           name: nexus
           ports:
