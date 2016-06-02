@@ -355,6 +355,17 @@ objects:
     name: gogs
     labels:
       app: gogs
+  spec:
+    tags:
+    - annotations:
+        description: The Gogs git server docker image
+        tags: gogs,go,golang
+        version: "latest"
+      from:
+        kind: DockerImage
+        name: thoraxe/gogs:latest
+      importPolicy: {}
+      name: "latest"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -375,7 +386,7 @@ objects:
           deploymentconfig: gogs
       spec:
         containers:
-        - image: thoraxe/gogs
+        - image: " "
           imagePullPolicy: Always
           name: gogs
           ports:
