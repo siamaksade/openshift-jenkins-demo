@@ -230,7 +230,7 @@ objects:
         tags: nexus
       from:
         kind: DockerImage
-        name: siamaksade/nexus:2.13.0-01
+        name: openshiftdemos/nexus:2.13.0-01
       importPolicy: {}
       name: "2.13.0-01"
 - apiVersion: v1
@@ -345,7 +345,7 @@ objects:
         version: "latest"
       from:
         kind: DockerImage
-        name: thoraxe/gogs:latest
+        name: openshiftdemos/gogs:latest
       importPolicy: {}
       name: "latest"
 - apiVersion: v1
@@ -558,7 +558,7 @@ objects:
         version: "5.5"
       from:
         kind: DockerImage
-        name: thoraxe/sonarqube:5.5
+        name: openshiftdemos/sonarqube:5.5
       importPolicy: {}
       name: "5.5"
 - apiVersion: v1
