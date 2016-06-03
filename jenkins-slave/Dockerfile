@@ -1,5 +1,5 @@
 # The FROM will be replaced when building in OpenShift
-FROM rhel7/rhel
+FROM centos:7
 
 MAINTAINER Siamak Sadeghianfar <ssadeghi@redhat.com>
 
@@ -8,13 +8,11 @@ ENV MAVEN_VERSION 3.3.9
 # Install headless Java
 USER root
 RUN yum clean all && \
-    yum-config-manager --disable rhel* 1>/dev/null && \
-    yum-config-manager --enable rhel-7-server-rpms && \
-    yum-config-manager --enable rhel-7-server-ose-3.2-rpms && \
     export INSTALL_PKGS="nss_wrapper java-1.8.0-openjdk-headless \
         java-1.8.0-openjdk-devel nss_wrapper gettext tar git \
-        which atomic-openshift-clients" && \
+        which origin-clients" && \
     yum clean all && \
+    yum -y --setopt=tsflags=nodocs install epel-release centos-release-openshift-origin && \
     yum install -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
     rpm -V $INSTALL_PKGS && \
     yum clean all && \
