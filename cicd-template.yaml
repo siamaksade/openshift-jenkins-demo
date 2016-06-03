@@ -370,12 +370,30 @@ objects:
         containers:
         - image: " "
           imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            httpGet:
+              port: 3000
+              path: /
+            timeoutSeconds: 1
           name: gogs
           ports:
           - containerPort: 3000
             protocol: TCP
           resources: {}
           terminationMessagePath: /dev/termination-log
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            httpGet:
+              port: 3000
+              path: /
+            timeoutSeconds: 1
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
@@ -692,3 +710,26 @@ objects:
           name: sonarqube:5.5
       type: ImageChange
   status: {}
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: install-gogs
+    labels:
+      app: gogs
+      job: install-gogs
+  spec:
+    containers:
+    - name: oc
+      image: docker.io/openshiftdemos/oc
+      command: ["/bin/bash",  "/tmp/installgogs.sh"]
+      volumeMounts:
+      - name: script-volume
+        mountPath: /tmp/
+    volumes:
+      - name: script-volume
+        configMap:
+          name: gogs-install
+          items:
+          - key: installgogs.sh
+            path: installgogs.sh
+    restartPolicy: Never
