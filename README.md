@@ -9,13 +9,12 @@ Create a new project for CI/CD components
   ```
   $ oc new-project ci
   $ oc policy add-role-to-user view -z default
-  $ oc create configmap gogs-install --from-file=oc/installgogs.sh
   ```
 
 Create the CI/CD compoentns based on the provided template
 
   ```
-  $ oc process -f cicd-template | oc create -f -
+  $ oc process -f cicd-template.yaml | oc create -f -
   ```
 
 Create Dev and Stage projects for Tasks JAX-RS application
