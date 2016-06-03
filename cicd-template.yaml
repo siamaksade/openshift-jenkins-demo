@@ -175,34 +175,16 @@ objects:
     labels:
       role: jenkins-slave
     name: jdk-jenkins-slave
-  spec: {}
-- apiVersion: v1
-  kind: BuildConfig
-  metadata:
-    annotations:
-      description: Builds Jenkins slave image with JDK
-    labels:
-      name: jdk-slave
-    name: jdk-jenkins-slave
   spec:
-    output:
-      to:
-        kind: ImageStreamTag
-        name: jdk-jenkins-slave:latest
-    source:
-      contextDir: jenkins-slave
-      git:
-        uri: https://github.com/siamaksade/openshift-cd-demo.git
-        ref: openshift-3.x
-      type: Git
-    strategy:
-      dockerStrategy:
-        from:
-          kind: DockerImage
-          name: rhel7/rhel
-      type: Docker
-    triggers:
-    - type: ConfigChange
+    tags:
+    - annotations:
+        description: The jenkins-slave image
+        tags: jenkins-slave
+      from:
+        kind: DockerImage
+        name: openshiftdemos/jenkins-slave:latest
+      importPolicy: {}
+      name: "latest"
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service
