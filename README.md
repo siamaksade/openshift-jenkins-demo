@@ -51,6 +51,6 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 Jenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. The following diagram shows the steps included in the deployment pipeline:
 
-![](https://raw.githubusercontent.com/siamaksade/openshift-cd-demo/openshift-3.x/images/pipeline.png)
+![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/pipeline.png)
 
 Run an instance of the pipeline by starting the _tasks-cd-pipeline_ job.
