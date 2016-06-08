@@ -20,6 +20,9 @@
    stage &apos;Test&apos;
    sh &quot;${mvnCmd} test&quot;
 
+   stage &apos;Static Analysis&apos;
+   sh &quot;${mvnCmd} sonar:sonar&quot;
+
    stage &apos;Push to Nexus&apos;
    sh &quot;${mvnCmd} deploy&quot;
 
