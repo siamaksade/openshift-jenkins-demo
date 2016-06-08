@@ -17,7 +17,7 @@ parameters:
   generate: expression
   name: JENKINS_PASSWORD
   value: password
-- description: Username for Gogs Git Server PostgreSQL backend
+- description: Username for PostgreSQL backend
   displayName: PostgreSQL User
   from: user[A-Z0-9]{3}
   generate: expression
@@ -93,8 +93,8 @@ objects:
     source:
       contextDir: jenkins-master
       git:
-        uri: https://github.com/siamaksade/openshift-cd-demo.git
-        ref: openshift-3.x
+        uri: https://github.com/OpenShiftDemos/openshift-cd-demo.git
+        ref: master
       secrets: []
       type: Git
     strategy:
@@ -436,7 +436,7 @@ objects:
         containers:
         - env:
           - name: POSTGRESQL_USER
-            value: ${POSTGRESQL_USER}
+            value: ${GOGS_POSTGRESQL_USER}
           - name: POSTGRESQL_PASSWORD
             value: ${GOGS_POSTGRESQL_PASSWORD}
           - name: POSTGRESQL_DATABASE
@@ -740,15 +740,15 @@ objects:
   data:
     installgogs.sh: |
       #!/bin/bash
-      
+
       set -x
-  
+
       # Use the oc client to get the url for the gogs route
       GOGSROUTE=$(oc get route gogs -o template --template='{{.spec.host}}')
-  
+
       # Use the oc client to get the postgres variables into the current shell"
       eval $(oc env dc/postgresql-gogs --list | grep -v \#)
-  
+
       # postgres has a readiness probe, so checking if there is at least one
       # endpoint means postgres is alive and ready, so we can then attempt to install gogs
       # we're willing to wait 60 seconds for it, otherwise something is wrong.
@@ -758,15 +758,15 @@ objects:
       do
         sleep 3
         x=$(( $x + 1 ))
-  
+
         if [ $x -gt 20 ]
         then
           exit 255
         fi
-  
+
         oc get ep postgresql-gogs -o yaml | grep "\- addresses:"
       done
-  
+
       # now we wait for gogs to be ready in the same way
       x=1
       oc get ep gogs -o yaml | grep "\- addresses:"
@@ -774,15 +774,15 @@ objects:
       do
         sleep 3
         x=$(( $x + 1 ))
-  
+
         if [ $x -gt 20 ]
         then
           exit 255
         fi
-  
+
         oc get ep gogs -o yaml | grep "\- addresses:"
       done
-  
+
       # we might catch the router before it's been updated, so wait just a touch
       # more
       sleep 10
