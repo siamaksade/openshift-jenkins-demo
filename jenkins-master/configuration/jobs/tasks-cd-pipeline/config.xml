@@ -15,13 +15,13 @@
 
    stage &apos;Build&apos;
    git url: &apos;https://github.com/siamaksade/openshift-tasks.git&apos;
-   sh &quot;${mvnCmd} clean install&quot;
+   sh &quot;${mvnCmd} clean install -DskipTests=true&quot;
 
    stage &apos;Test&apos;
    sh &quot;${mvnCmd} test&quot;
 
    stage &apos;Static Analysis&apos;
-   sh &quot;${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000&quot;
+   sh &quot;${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true&quot;
 
    stage &apos;Push to Nexus&apos;
    sh &quot;${mvnCmd} deploy&quot;
