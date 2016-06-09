@@ -13,7 +13,7 @@ This repository includes the infrastructure and pipeline definition for continuo
 Create a new project for CI/CD components
 
   ```
-  $ oc new-project ci
+  $ oc new-project ci --display-name="CI/CD"
   ```
 
 Create the CI/CD compoentns based on the provided template
