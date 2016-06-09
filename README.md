@@ -14,7 +14,6 @@ Create a new project for CI/CD components
 
   ```
   $ oc new-project ci
-  $ oc policy add-role-to-user view -z default
   ```
 
 Create the CI/CD compoentns based on the provided template
