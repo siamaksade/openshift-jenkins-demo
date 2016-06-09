@@ -17,11 +17,16 @@
    git url: &apos;https://github.com/siamaksade/openshift-tasks.git&apos;
    sh &quot;${mvnCmd} clean install -DskipTests=true&quot;
 
-   stage &apos;Test&apos;
-   sh &quot;${mvnCmd} test&quot;
-
-   stage &apos;Static Analysis&apos;
-   sh &quot;${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true&quot;
+   stage &apos;Test and Analysis&apos;
+   parallel (
+       &apos;Test&apos;: {
+           sh &quot;${mvnCmd} test&quot;
+           step([$class: &apos;JUnitResultArchiver&apos;, testResults: &apos;**/target/surefire-reports/TEST-*.xml&apos;])
+       },
+       &apos;Static Analysis&apos;: {
+           sh &quot;${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true&quot;
+       }
+   )
 
    stage &apos;Push to Nexus&apos;
    sh &quot;${mvnCmd} deploy&quot;
