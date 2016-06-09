@@ -6,7 +6,6 @@
   <properties/>
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.0">
     <script>node(&apos;jdk8&apos;) {
-
    // define commands
    def mvnHome = tool &apos;M3&apos;
    def mvnCmd = &quot;${mvnHome}/bin/mvn -s ${env.JENKINS_HOME}/settings.xml&quot;
@@ -15,6 +14,7 @@
 
    stage &apos;Build&apos;
    git url: &apos;https://github.com/siamaksade/openshift-tasks.git&apos;
+   def v = version()
    sh &quot;${mvnCmd} clean install -DskipTests=true&quot;
 
    stage &apos;Test and Analysis&apos;
@@ -34,8 +34,32 @@
    stage &apos;Deploy DEV&apos;
    sh &quot;rm -rf oc-build &amp;&amp; mkdir -p oc-build/deployments&quot;
    sh &quot;cp target/jboss-tasks-rs.war oc-build/deployments/ROOT.war&quot;
-   sh &quot;${ocCmd} start-build tasks --from-dir=oc-build -n dev&quot;
-}</script>
+   // clean up. keep the image stream
+   sh &quot;${ocCmd} delete bc,dc,svc,route -l app=tasks -n dev&quot;
+   // create build
+   sh &quot;${ocCmd} new-build --name=tasks --image-stream=jboss-eap64-openshift --binary=true --labels=app=tasks -n dev&quot;
+   // build image
+   sh &quot;${ocCmd} start-build tasks --from-dir=oc-build --wait=true -n dev&quot;
+   // deploy image
+   sh &quot;${ocCmd} new-app tasks:latest -n dev&quot;
+   sh &quot;${ocCmd} expose svc/tasks -n dev&quot;
+   // tag for stage
+   sh &quot;${ocCmd} tag dev/tasks:latest stage/tasks:${v}&quot;
+
+   stage &apos;Deploy STAGE&apos;
+   // clean up. keep the imagestream
+   sh &quot;${ocCmd} delete bc,dc,svc,route -l app=tasks -n stage&quot;
+   // deploy stage image
+   sh &quot;${ocCmd} new-app tasks:${v} -n stage&quot;
+   sh &quot;${ocCmd} expose svc/tasks -n stage&quot;
+}
+
+def version() {
+  def matcher = readFile(&apos;pom.xml&apos;) =~ &apos;&lt;version&gt;(.+)&lt;/version&gt;&apos;
+  matcher ? matcher[0][1] : null
+}
+
+</script>
     <sandbox>false</sandbox>
   </definition>
   <triggers/>
