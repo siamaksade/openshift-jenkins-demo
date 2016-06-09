@@ -1,12 +1,13 @@
 # OpenShift 3 CI/CD Demo
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus and SonarQube on OpenShift. On every pipeline execution, the code goes through the following steps:
+
 1. Code is cloned from Git, built, tested and analyzed for bugs and bad patterns
 2. The WAR artifact is pushed to Nexus Repository manager
 3. A Docker image (_tasks:latest_) is built based on the _Tasks_ application WAR artifact deployed on JBoss EAP 6
 4. The _Tasks_ Docker image is deployed in a fresh new container in DEV project
 5. If tests successful, the DEV image is tagged with the application version (_tasks:6.4.0_) in the STAGE project
-6. The staged image is deployed in a fresh new container in STAGE project
+6. The staged image is deployed in a fresh new container in the STAGE project
 
 # Setup
 
