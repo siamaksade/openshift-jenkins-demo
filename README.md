@@ -9,6 +9,10 @@ This repository includes the infrastructure and pipeline definition for continuo
 5. If tests successful, the DEV image is tagged with the application version (_tasks:6.4.0_) in the STAGE project
 6. The staged image is deployed in a fresh new container in the STAGE project
 
+The following diagram shows the steps included in the deployment pipeline:
+
+![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/pipeline.png)
+
 # Setup
 
 Create a new project for CI/CD components
@@ -40,8 +44,4 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 # Demo Guide
 
-Jenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. The following diagram shows the steps included in the deployment pipeline:
-
-![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/pipeline.png)
-
-Run an instance of the pipeline by starting the _tasks-cd-pipeline_ job.
+Jenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. Run an instance of the pipeline by starting the _tasks-cd-pipeline_ job.
