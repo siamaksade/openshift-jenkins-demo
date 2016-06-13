@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: cicd
+  name: cicd-gogs
 labels:
-  template: cicd
+  template: cicd-gogs
   group: cicd
 metadata:
   annotations:
