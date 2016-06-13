@@ -33,7 +33,7 @@
 
    stage &apos;Deploy DEV&apos;
    sh &quot;rm -rf oc-build &amp;&amp; mkdir -p oc-build/deployments&quot;
-   sh &quot;cp target/jboss-tasks-rs.war oc-build/deployments/ROOT.war&quot;
+   sh &quot;cp target/openshift-tasks.war oc-build/deployments/ROOT.war&quot;
    // clean up. keep the image stream
    sh &quot;${ocCmd} delete bc,dc,svc,route -l app=tasks -n dev&quot;
    // create build
