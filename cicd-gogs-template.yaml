@@ -743,7 +743,8 @@ objects:
 
       set -x
 
-      # Use the oc client to get the url for the gogs route
+      # Use the oc client to get the url for the gogs route and service
+      GOGSSVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
       GOGSROUTE=$(oc get route gogs -o template --template='{{.spec.host}}')
 
       # Use the oc client to get the postgres variables into the current shell"
@@ -787,7 +788,7 @@ objects:
       # more
       sleep 10
 
-      RETURN=$(curl -o /dev/null -sL -w "%{http_code}" http://$GOGSROUTE/install \
+      RETURN=$(curl -o /dev/null -sL -w "%{http_code}" http://$GOGSSVC:3000/install \
       --form db_type=PostgreSQL \
       --form db_host=postgresql-gogs:5432 \
       --form db_user=$POSTGRESQL_USER \
@@ -801,7 +802,7 @@ objects:
       --form domain=localhost \
       --form ssh_port=22 \
       --form http_port=3000 \
-      --form app_url=http://$GOGSROUTE/ \
+      --form app_url=http://${GOGSROUTE}/ \
       --form log_root_path=/opt/gogs/log)
 
       if [ $RETURN != "200" ]

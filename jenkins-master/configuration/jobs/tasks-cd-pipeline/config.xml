@@ -33,11 +33,11 @@
 
    stage &apos;Deploy DEV&apos;
    sh &quot;rm -rf oc-build &amp;&amp; mkdir -p oc-build/deployments&quot;
-   sh &quot;cp target/jboss-tasks-rs.war oc-build/deployments/ROOT.war&quot;
+   sh &quot;cp target/openshift-tasks.war oc-build/deployments/ROOT.war&quot;
    // clean up. keep the image stream
    sh &quot;${ocCmd} delete bc,dc,svc,route -l app=tasks -n dev&quot;
-   // create build
-   sh &quot;${ocCmd} new-build --name=tasks --image-stream=jboss-eap64-openshift --binary=true --labels=app=tasks -n dev&quot;
+   // create build. override the exit code since it complains about exising imagestream
+   sh &quot;${ocCmd} new-build --name=tasks --image-stream=jboss-eap64-openshift --binary=true --labels=app=tasks -n dev || true&quot;
    // build image
    sh &quot;${ocCmd} start-build tasks --from-dir=oc-build --wait=true -n dev&quot;
    // deploy image
