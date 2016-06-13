@@ -436,7 +436,7 @@ objects:
         containers:
         - env:
           - name: POSTGRESQL_USER
-            value: ${GOGS_POSTGRESQL_USER}
+            value: ${POSTGRESQL_USER}
           - name: POSTGRESQL_PASSWORD
             value: ${GOGS_POSTGRESQL_PASSWORD}
           - name: POSTGRESQL_DATABASE
