@@ -13,7 +13,7 @@
 
 
    stage &apos;Build&apos;
-   git url: &apos;https://github.com/siamaksade/openshift-tasks.git&apos;
+   git url: &apos;https://github.com/OpenShiftDemos/openshift-tasks.git&apos;
    def v = version()
    sh &quot;${mvnCmd} clean install -DskipTests=true&quot;
 
