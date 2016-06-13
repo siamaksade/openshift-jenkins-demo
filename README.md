@@ -18,7 +18,7 @@ The following diagram shows the steps included in the deployment pipeline:
 Create a new project for CI/CD components
 
   ```
-  $ oc new-project ci
+  $ oc new-project cicd --display-name="CI/CD"
   ```
 
 Create the CI/CD compoentns based on the provided template
@@ -37,9 +37,9 @@ Create Dev and Stage projects for Tasks JAX-RS application
 Jenkins needs to access OpenShift API to discover slave images as well accessing container images. Grant Jenkins service account enough privileges to invoke OpenShift API for the created projects:
 
   ```
-  $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n ci
-  $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n dev
-  $ oc policy add-role-to-user edit system:serviceaccount:ci:default -n stage
+  $ oc policy add-role-to-user edit system:serviceaccount:cicd:default -n cicd
+  $ oc policy add-role-to-user edit system:serviceaccount:cicd:default -n dev
+  $ oc policy add-role-to-user edit system:serviceaccount:cicd:default -n stage
   ```
 
 # Demo Guide
