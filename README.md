@@ -24,7 +24,7 @@ Create a new project for CI/CD components
 Create the CI/CD compoentns based on the provided template
 
   ```
-  $ oc new-app cicd-gogs-template.yaml
+  $ oc process -f cicd-gogs-template.yaml | oc create -f -
   ```
 
 Create Dev and Stage projects for Tasks JAX-RS application
