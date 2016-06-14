@@ -192,14 +192,14 @@ objects:
     source:
       contextDir: jenkins-slave
       git:
-        uri: https://github.com/siamaksade/openshift-cd-demo.git
-        ref: openshift-3.x
+        uri: https://github.com/OpenShiftDemos/openshift-cd-demo.git
+        ref: master
       type: Git
     strategy:
       dockerStrategy:
         from:
           kind: DockerImage
-          name: rhel7/rhel
+          name: centos:7
       type: Docker
     triggers:
     - type: ConfigChange
