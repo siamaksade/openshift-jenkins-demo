@@ -11,7 +11,7 @@
       <!--This sends everything else to /public -->
       <id>nexus</id>
       <mirrorOf>*</mirrorOf>
-      <url>http://nexus.ci.svc.cluster.local:8081/content/groups/public/</url>
+      <url>http://nexus:8081/content/groups/public/</url>
     </mirror>
   </mirrors>
   <profiles>
