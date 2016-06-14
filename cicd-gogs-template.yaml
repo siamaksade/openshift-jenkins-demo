@@ -7,10 +7,10 @@ labels:
   group: cicd
 metadata:
   annotations:
-    description: Creates the CI/CD infrastructure with Jenins, Gogs, Nexus, etc
+    description: Creates the CI/CD infrastructure with Jenins, Gogs, Nexus and SonarQube
     iconClass: icon-jenkins
     tags: instant-app,jenkins,gogs,nexus,cicd
-  name: cicd
+  name: cicd-gogs
 parameters:
 - description: Password for the Jenkins user.
   displayName: Jenkins Password
@@ -175,16 +175,34 @@ objects:
     labels:
       role: jenkins-slave
     name: jdk-jenkins-slave
+  spec: {}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Builds Jenkins slave image with JDK
+    labels:
+      name: jdk-slave
+    name: jdk-jenkins-slave
   spec:
-    tags:
-    - annotations:
-        description: The jenkins-slave image
-        tags: jenkins-slave
-      from:
-        kind: DockerImage
-        name: openshiftdemos/jenkins-slave:latest
-      importPolicy: {}
-      name: "latest"
+    output:
+      to:
+        kind: ImageStreamTag
+        name: jdk-jenkins-slave:latest
+    source:
+      contextDir: jenkins-slave
+      git:
+        uri: https://github.com/siamaksade/openshift-cd-demo.git
+        ref: openshift-3.x
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: rhel7/rhel
+      type: Docker
+    triggers:
+    - type: ConfigChange
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service
