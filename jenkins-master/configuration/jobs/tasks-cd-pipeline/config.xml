@@ -29,7 +29,7 @@
    )
 
    stage &apos;Push to Nexus&apos;
-   sh &quot;${mvnCmd} deploy&quot;
+   sh &quot;${mvnCmd} deploy -DskipTests=true&quot;
 
    stage &apos;Deploy DEV&apos;
    sh &quot;rm -rf oc-build &amp;&amp; mkdir -p oc-build/deployments&quot;
