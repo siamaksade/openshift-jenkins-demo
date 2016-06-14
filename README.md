@@ -44,7 +44,11 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 # Demo Guide
 
-1. RunJenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. Run an instance of the pipeline by starting the ```tasks-cd-pipeline``` job.
+1. RunJenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. Click on ```tasks-cd-pipeline``` and _Configure_ and explore the pipeline definition.
+
+2. If using Gogs, modify the git repository url in the pipeline definition and set it to ```http://gogs:3000/gogs/openshift-tasks.git```.
+
+2. Run an instance of the pipeline by starting the ```tasks-cd-pipeline``` job.
 
 2. During pipeline execution, verify a new Jenkins slave pod is created withing _CI/CD_ project to execute the pipeline.
 
@@ -67,3 +71,5 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 8. Fix the test by modifying ```src/main/java/org/jboss/as/quickstarts/tasksrs/service/UserResource.java``` and uncommenting the sort function in ```getUsers``` method.
 
 9. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
+
+![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/jenkins-pipeline.png)
