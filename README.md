@@ -60,6 +60,8 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 4. Add a webhook in [GitHub](https://developer.github.com/webhooks/creating/#setting-up-a-webhook) or [Gogs](https://gogs.io/docs/features/webhook) to trigger the pipeline whenever a change is pushed to the git repository. Use pipeline job's _Build Now_ url as the webhook url.
 
+  If using Gogs, webhooks configuration is in repository's _Settings &gt; Webhooks_ and the _tasks-cd-pipeline_ webhook url is http://jenkins:8080/job/tasks-cd-pipeline/build?delay=0sec. 
+
   _Note:_ if GitHub is used and Jenkins route is not accessible from the Internet, use SCM Polling instead of webhooks to trigger builds.
 
 5. Clone the ```openshift-tasks``` git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
