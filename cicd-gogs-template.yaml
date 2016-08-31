@@ -11,6 +11,8 @@ metadata:
     iconClass: icon-jenkins
     tags: instant-app,jenkins,gogs,nexus,cicd
   name: cicd-gogs
+message: "Gogs: "
+message: "The CI/CD infrastructure copmosed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD}.  The tutorial at https://github.com/OpenShiftDemos/openshift-cd-demo/ contains more information about using this CI/CD demo.",
 parameters:
 - description: Password for the Jenkins user.
   displayName: Jenkins Password
@@ -43,25 +45,44 @@ objects:
     labels:
       app: jenkins
     name: jenkins
+
+
+
 - apiVersion: v1
   kind: Service
   metadata:
-    labels:
-      app: jenkins
-    name: jenkins
+    name: jenkins-jnlp
   spec:
+    portalIP: ""
     ports:
-    - name: web
-      port: 8080
-      protocol: TCP
-      targetPort: 8080
-    - name: jnlp
+    - name: agent
+      nodePort: 0
       port: 50000
       protocol: TCP
       targetPort: 50000
     selector:
-      app: jenkins
-      deploymentconfig: jenkins
+      name: jenkins
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name": "jenkins-jnlp", "namespace":
+        "", "kind": "Service"}]'
+      service.openshift.io/infrastructure: "true"
+    creationTimestamp: null
+    name: jenkins
+  spec:
+    portalIP: ""
+    ports:
+    - name: web
+      nodePort: 0
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: jenkins
     sessionAffinity: None
     type: ClusterIP
 - apiVersion: v1
@@ -130,30 +151,46 @@ objects:
           deploymentconfig: jenkins
       spec:
         containers:
-        - env:
+        - capabilities: {}
+          env:
           - name: JENKINS_PASSWORD
             value: ${JENKINS_PASSWORD}
-          image: " "
-          imagePullPolicy: Always
+          - name: KUBERNETES_MASTER
+            value: https://kubernetes.default:443
+          - name: KUBERNETES_TRUST_CERTIFICATES
+            value: "true"
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 120
+            timeoutSeconds: 3
           name: jenkins
-          ports:
-          - containerPort: 8080
-            protocol: TCP
-          - containerPort: 50000
-            protocol: TCP
-          resources: {}
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: 1Gi
+          securityContext:
+            capabilities: {}
+            privileged: false
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /var/lib/jenkins
             name: jenkins-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
+        serviceAccountName: jenkins
         volumes:
-        - name: jenkins-data
-          emptyDir:
+        - emptyDir:
             medium: ""
+          name: jenkins-data
     test: false
     triggers:
     - type: ConfigChange
@@ -165,44 +202,6 @@ objects:
           kind: ImageStreamTag
           name: jenkins:latest
       type: ImageChange
-# Jenkins Slave
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    annotations:
-      slave-directory: /var/lib/jenkins
-      slave-label: jdk8
-    labels:
-      role: jenkins-slave
-    name: jdk-jenkins-slave
-  spec: {}
-- apiVersion: v1
-  kind: BuildConfig
-  metadata:
-    annotations:
-      description: Builds Jenkins slave image with JDK
-    labels:
-      name: jdk-slave
-    name: jdk-jenkins-slave
-  spec:
-    output:
-      to:
-        kind: ImageStreamTag
-        name: jdk-jenkins-slave:latest
-    source:
-      contextDir: jenkins-slave
-      git:
-        uri: https://github.com/OpenShiftDemos/openshift-cd-demo.git
-        ref: master
-      type: Git
-    strategy:
-      dockerStrategy:
-        from:
-          kind: DockerImage
-          name: centos:7
-      type: Docker
-    triggers:
-    - type: ConfigChange
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service

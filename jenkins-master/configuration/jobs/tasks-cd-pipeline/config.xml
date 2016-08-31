@@ -7,29 +7,26 @@
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.0">
     <script>node(&apos;jdk8&apos;) {
    // define commands
-   def mvnHome = tool &apos;M3&apos;
-   def mvnCmd = &quot;${mvnHome}/bin/mvn -s ${env.JENKINS_HOME}/settings.xml&quot;
    def ocCmd = &quot;/usr/bin/oc --token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token` --server=https://openshift.default.svc.cluster.local --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt&quot;
-
 
    stage &apos;Build&apos;
    git url: &apos;https://github.com/OpenShiftDemos/openshift-tasks.git&apos;
    def v = version()
-   sh &quot;${mvnCmd} clean install -DskipTests=true&quot;
+   sh &quot;mvn -f pom-cicd.xml clean install -DskipTests=true&quot;
 
    stage &apos;Test and Analysis&apos;
    parallel (
        &apos;Test&apos;: {
-           sh &quot;${mvnCmd} test&quot;
+           sh &quot;mvn -f pom-cicd.xml test&quot;
            step([$class: &apos;JUnitResultArchiver&apos;, testResults: &apos;**/target/surefire-reports/TEST-*.xml&apos;])
        },
        &apos;Static Analysis&apos;: {
-           sh &quot;${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true&quot;
+           sh &quot;mvn -f pom-cicd.xml jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true&quot;
        }
    )
 
    stage &apos;Push to Nexus&apos;
-   sh &quot;${mvnCmd} deploy -DskipTests=true&quot;
+   sh &quot;mvn -f pom-cicd.xml deploy -DskipTests=true&quot;
 
    stage &apos;Deploy DEV&apos;
    sh &quot;rm -rf oc-build &amp;&amp; mkdir -p oc-build/deployments&quot;
