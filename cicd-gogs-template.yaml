@@ -775,10 +775,10 @@ objects:
       oc get ep postgresql-gogs -o yaml | grep "\- addresses:"
       while [ ! $? -eq 0 ]
       do
-        sleep 3
+        sleep 5
         x=$(( $x + 1 ))
 
-        if [ $x -gt 20 ]
+        if [ $x -gt 100 ]
         then
           exit 255
         fi
@@ -791,10 +791,10 @@ objects:
       oc get ep gogs -o yaml | grep "\- addresses:"
       while [ ! $? -eq 0 ]
       do
-        sleep 3
+        sleep 5
         x=$(( $x + 1 ))
 
-        if [ $x -gt 20 ]
+        if [ $x -gt 100 ]
         then
           exit 255
         fi
