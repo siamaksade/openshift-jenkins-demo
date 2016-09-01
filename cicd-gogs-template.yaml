@@ -11,8 +11,7 @@ metadata:
     iconClass: icon-jenkins
     tags: instant-app,jenkins,gogs,nexus,cicd
   name: cicd-gogs
-message: "Gogs: "
-message: "The CI/CD infrastructure copmosed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD}.  The tutorial at https://github.com/OpenShiftDemos/openshift-cd-demo/ contains more information about using this CI/CD demo.",
+message: The CI/CD infrastructure composed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD}.  The tutorial at https://github.com/OpenShiftDemos/openshift-cd-demo/ contains more information about using this CI/CD demo.
 parameters:
 - description: Password for the Jenkins user.
   displayName: Jenkins Password
@@ -45,13 +44,12 @@ objects:
     labels:
       app: jenkins
     name: jenkins
-
-
-
 - apiVersion: v1
   kind: Service
   metadata:
     name: jenkins-jnlp
+    labels:
+      app: jenkins
   spec:
     portalIP: ""
     ports:
@@ -61,7 +59,7 @@ objects:
       protocol: TCP
       targetPort: 50000
     selector:
-      name: jenkins
+      app: jenkins
     sessionAffinity: None
     type: ClusterIP
 - apiVersion: v1
@@ -73,6 +71,8 @@ objects:
       service.openshift.io/infrastructure: "true"
     creationTimestamp: null
     name: jenkins
+    labels:
+      app: jenkins
   spec:
     portalIP: ""
     ports:
@@ -82,7 +82,7 @@ objects:
       protocol: TCP
       targetPort: 8080
     selector:
-      name: jenkins
+      app: jenkins
     sessionAffinity: None
     type: ClusterIP
 - apiVersion: v1
@@ -114,8 +114,8 @@ objects:
     source:
       contextDir: jenkins-master
       git:
-        uri: https://github.com/OpenShiftDemos/openshift-cd-demo.git
-        ref: master
+        uri: https://github.com/siamaksade/openshift-cd-demo.git
+        ref: openshift-3.3
       secrets: []
       type: Git
     strategy:
@@ -186,7 +186,6 @@ objects:
             name: jenkins-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        serviceAccountName: jenkins
         volumes:
         - emptyDir:
             medium: ""
@@ -234,22 +233,22 @@ objects:
     to:
       kind: Service
       name: nexus
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      app: nexus
-    name: nexus
-  spec:
-    tags:
-    - annotations:
-        description: The Nexus Docker image
-        tags: nexus
-      from:
-        kind: DockerImage
-        name: openshiftdemos/nexus:2.13.0-01
-      importPolicy: {}
-      name: "2.13.0-01"
+# - apiVersion: v1
+#   kind: ImageStream
+#   metadata:
+#     labels:
+#       app: nexus
+#     name: nexus
+#   spec:
+#     tags:
+#     - annotations:
+#         description: The Nexus Docker image
+#         tags: nexus
+#       from:
+#         kind: DockerImage
+#         name: openshiftdemos/nexus:2.13.0-01
+#       importPolicy: {}
+#       name: "2.13.0-01"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -270,13 +269,33 @@ objects:
           deploymentconfig: nexus
       spec:
         containers:
-        - image: " "
+        - image: "openshiftdemos/nexus:2.13.0-01"
           imagePullPolicy: Always
           name: nexus
           ports:
           - containerPort: 8081
             protocol: TCP
-          resources: {}
+          livenessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            httpGet:
+              port: 8081
+              path: /content/groups/public
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            httpGet:
+              port: 8081
+              path: /content/groups/public
+            timeoutSeconds: 5
+          resources:
+            limits:
+              memory: 2Gi
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /opt/nexus-work
@@ -289,21 +308,23 @@ objects:
           name: nexus-data
     triggers:
     - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - nexus
-        from:
-          kind: ImageStreamTag
-          name: nexus:2.13.0-01
-      type: ImageChange
+    # - imageChangeParams:
+    #     automatic: true
+    #     containerNames:
+    #     - nexus
+    #     from:
+    #       kind: ImageStreamTag
+    #       name: nexus:2.13.0-01
+    #   type: ImageChange
   status: {}
-# gogs
+# Gogs
 - apiVersion: v1
   kind: Service
   metadata:
     annotations:
       description: The Gogs server's http port
+      service.alpha.openshift.io/dependencies: '[{"name": "postgresql-gogs", "namespace": "", "kind": "Service"}]'
+      service.openshift.io/infrastructure: "true"
     labels:
       app: gogs
     name: gogs
@@ -348,23 +369,23 @@ objects:
     to:
       kind: Service
       name: gogs
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    name: gogs
-    labels:
-      app: gogs
-  spec:
-    tags:
-    - annotations:
-        description: The Gogs git server docker image
-        tags: gogs,go,golang
-        version: "latest"
-      from:
-        kind: DockerImage
-        name: openshiftdemos/gogs:latest
-      importPolicy: {}
-      name: "latest"
+# - apiVersion: v1
+#   kind: ImageStream
+#   metadata:
+#     name: gogs
+#     labels:
+#       app: gogs
+#   spec:
+#     tags:
+#     - annotations:
+#         description: The Gogs git server docker image
+#         tags: gogs,go,golang
+#         version: "latest"
+#       from:
+#         kind: DockerImage
+#         name: openshiftdemos/gogs:latest
+#       importPolicy: {}
+#       name: "latest"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -385,7 +406,8 @@ objects:
           deploymentconfig: gogs
       spec:
         containers:
-        - image: " "
+        - image: "openshiftdemos/gogs:latest"
+        # - image: " "
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -400,7 +422,9 @@ objects:
           ports:
           - containerPort: 3000
             protocol: TCP
-          resources: {}
+          resources:
+            limits:
+              memory: 512Mi
           terminationMessagePath: /dev/termination-log
           readinessProbe:
             failureThreshold: 3
@@ -417,14 +441,14 @@ objects:
         terminationGracePeriodSeconds: 30
     triggers:
     - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - gogs
-        from:
-          kind: ImageStreamTag
-          name: gogs:latest
-      type: ImageChange
+    # - imageChangeParams:
+    #     automatic: true
+    #     containerNames:
+    #     - gogs
+    #     from:
+    #       kind: ImageStreamTag
+    #       name: gogs:latest
+    #   type: ImageChange
   status: {}
 - apiVersion: v1
   kind: DeploymentConfig
@@ -458,7 +482,8 @@ objects:
             value: ${GOGS_POSTGRESQL_PASSWORD}
           - name: POSTGRESQL_DATABASE
             value: gogs
-          image: registry.access.redhat.com/rhscl/postgresql-94-rhel7:latest
+          image: 'centos/postgresql-95-centos7:latest'
+          # image: ' '
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -503,229 +528,15 @@ objects:
         - emptyDir: {}
           name: postgresql-data
     triggers:
-    - imageChangeParams:
-        containerNames:
-        - postgresql
-        from:
-          kind: ImageStreamTag
-          name: postgresql:latest
-          namespace: openshift
-      type: ImageChange
+    # - imageChangeParams:
+    #     containerNames:
+    #     - postgresql
+    #     from:
+    #       kind: ImageStreamTag
+    #       name: postgresql:latest
+    #       namespace: openshift
+    #   type: ImageChange
     - type: ConfigChange
-  status: {}
-# SonarQube
-- apiVersion: v1
-  kind: Service
-  metadata:
-    creationTimestamp: null
-    name: postgresql-sonarqube
-    labels:
-      app: sonarqube
-  spec:
-    ports:
-    - name: postgresql
-      port: 5432
-      protocol: TCP
-      targetPort: 5432
-    selector:
-      app: sonarqube
-      deploymentconfig: postgresql-sonarqube
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: sonarqube
-    labels:
-      app: sonarqube
-  spec:
-    ports:
-    - name: sonarqube
-      port: 9000
-      protocol: TCP
-      targetPort: 9000
-    selector:
-      app: sonarqube
-      deploymentconfig: sonarqube
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Route
-  metadata:
-    annotations:
-      description: Route for SonarQube's http service.
-    name: sonarqube
-    labels:
-      app: sonarqube
-  spec:
-    to:
-      kind: Service
-      name: sonarqube
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      app: sonarqube
-    name: sonarqube
-  spec:
-    tags:
-    - annotations:
-        description: The SonarQube Docker image
-        tags: sonarqube
-        version: "5.5"
-      from:
-        kind: DockerImage
-        name: openshiftdemos/sonarqube:5.5
-      importPolicy: {}
-      name: "5.5"
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    labels:
-      app: sonarqube
-      deploymentconfig: postgresql-sonarqube
-    name: postgresql-sonarqube
-  spec:
-    replicas: 1
-    selector:
-      app: sonarqube
-      deploymentconfig: postgresql-sonarqube
-    strategy:
-      recreateParams:
-        timeoutSeconds: 600
-      resources: {}
-      type: Recreate
-    template:
-      metadata:
-        labels:
-          app: sonarqube
-          deploymentconfig: postgresql-sonarqube
-      spec:
-        containers:
-        - env:
-          - name: POSTGRESQL_USER
-            value: ${POSTGRESQL_USER}
-          - name: POSTGRESQL_PASSWORD
-            value: ${SONAR_POSTGRESQL_PASSWORD}
-          - name: POSTGRESQL_DATABASE
-            value: sonar
-          image: registry.access.redhat.com/rhscl/postgresql-94-rhel7:latest
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            tcpSocket:
-              port: 5432
-            timeoutSeconds: 1
-          name: postgresql
-          ports:
-          - containerPort: 5432
-            protocol: TCP
-          readinessProbe:
-            exec:
-              command:
-              - /bin/sh
-              - -i
-              - -c
-              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c
-                'SELECT 1'
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources:
-            limits:
-              memory: 512Mi
-          securityContext:
-            capabilities: {}
-            privileged: false
-          terminationMessagePath: /dev/termination-log
-          volumeMounts:
-          - mountPath: /var/lib/pgsql/data
-            name: postgresql-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
-        volumes:
-        - emptyDir: {}
-          name: postgresql-data
-    test: false
-    triggers:
-    - imageChangeParams:
-        containerNames:
-        - postgresql
-        from:
-          kind: ImageStreamTag
-          name: postgresql:latest
-          namespace: openshift
-      type: ImageChange
-    - type: ConfigChange
-  status: {}
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    labels:
-      app: sonarqube
-      deploymentconfig: sonarqube
-    name: sonarqube
-  spec:
-    replicas: 1
-    selector:
-      app: sonarqube
-      deploymentconfig: sonarqube
-    strategy:
-      resources: {}
-      rollingParams:
-        intervalSeconds: 1
-        maxSurge: 25%
-        maxUnavailable: 25%
-        timeoutSeconds: 600
-        updatePeriodSeconds: 1
-      type: Rolling
-    template:
-      metadata:
-        annotations:
-          openshift.io/container.sonarqube.image.entrypoint: '["./bin/run.sh"]'
-        creationTimestamp: null
-        labels:
-          app: sonarqube
-          deploymentconfig: sonarqube
-      spec:
-        containers:
-        - env:
-          - name: SONARQUBE_JDBC_PASSWORD
-            value: ${SONAR_POSTGRESQL_PASSWORD}
-          - name: SONARQUBE_JDBC_URL
-            value: jdbc:postgresql://postgresql-sonarqube/sonar
-          - name: SONARQUBE_JDBC_USERNAME
-            value: ${POSTGRESQL_USER}
-          image: " "
-          imagePullPolicy: IfNotPresent
-          name: sonarqube
-          ports:
-          - containerPort: 9000
-            protocol: TCP
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
-    test: false
-    triggers:
-    - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - sonarqube
-        from:
-          kind: ImageStreamTag
-          name: sonarqube:5.5
-      type: ImageChange
   status: {}
 - apiVersion: v1
   kind: Pod
@@ -742,6 +553,9 @@ objects:
       volumeMounts:
       - name: script-volume
         mountPath: /tmp/
+      resources:
+        limits:
+          memory: 128Mi
     volumes:
       - name: script-volume
         configMap:
@@ -826,3 +640,242 @@ objects:
       then
         exit 255
       fi
+# SonarQube
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    name: postgresql-sonarqube
+    labels:
+      app: sonarqube
+  spec:
+    ports:
+    - name: postgresql
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+    selector:
+      app: sonarqube
+      deploymentconfig: postgresql-sonarqube
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name": "postgresql-sonarqube", "namespace": "", "kind": "Service"}]'
+      service.openshift.io/infrastructure: "true"
+    name: sonarqube
+    labels:
+      app: sonarqube
+  spec:
+    ports:
+    - name: sonarqube
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    selector:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      description: Route for SonarQube's http service.
+    name: sonarqube
+    labels:
+      app: sonarqube
+  spec:
+    to:
+      kind: Service
+      name: sonarqube
+# - apiVersion: v1
+#   kind: ImageStream
+#   metadata:
+#     labels:
+#       app: sonarqube
+#     name: sonarqube
+#   spec:
+#     tags:
+#     - annotations:
+#         description: The SonarQube Docker image
+#         tags: sonarqube
+#         version: "5.5"
+#       from:
+#         kind: DockerImage
+#         name: openshiftdemos/sonarqube:5.5
+#       importPolicy: {}
+#       name: "5.5"
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: sonarqube
+      deploymentconfig: postgresql-sonarqube
+    name: postgresql-sonarqube
+  spec:
+    replicas: 1
+    selector:
+      app: sonarqube
+      deploymentconfig: postgresql-sonarqube
+    strategy:
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: sonarqube
+          deploymentconfig: postgresql-sonarqube
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_USER
+            value: ${POSTGRESQL_USER}
+          - name: POSTGRESQL_PASSWORD
+            value: ${SONAR_POSTGRESQL_PASSWORD}
+          - name: POSTGRESQL_DATABASE
+            value: sonar
+          image: 'centos/postgresql-95-centos7:latest'
+          # image: ' '
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 5432
+            timeoutSeconds: 1
+          name: postgresql
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c
+                'SELECT 1'
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: postgresql-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - emptyDir: {}
+          name: postgresql-data
+    test: false
+    triggers:
+    # - imageChangeParams:
+    #     containerNames:
+    #     - postgresql
+    #     from:
+    #       kind: ImageStreamTag
+    #       name: postgresql:9.5
+    #       namespace: openshift
+    #   type: ImageChange
+    - type: ConfigChange
+  status: {}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    name: sonarqube
+  spec:
+    replicas: 1
+    selector:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/container.sonarqube.image.entrypoint: '["./bin/run.sh"]'
+        creationTimestamp: null
+        labels:
+          app: sonarqube
+          deploymentconfig: sonarqube
+      spec:
+        containers:
+        - env:
+          - name: SONARQUBE_JDBC_PASSWORD
+            value: ${SONAR_POSTGRESQL_PASSWORD}
+          - name: SONARQUBE_JDBC_URL
+            value: jdbc:postgresql://postgresql-sonarqube/sonar
+          - name: SONARQUBE_JDBC_USERNAME
+            value: ${POSTGRESQL_USER}
+          # image: " "
+          image: "openshiftdemos/sonarqube:6.0"
+          imagePullPolicy: IfNotPresent
+          name: sonarqube
+          ports:
+          - containerPort: 9000
+            protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            successThreshold: 1
+            httpGet:
+              port: 9000
+              path: /
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            successThreshold: 1
+            httpGet:
+              port: 9000
+              path: /
+            timeoutSeconds: 5
+          resources:
+            limits:
+              memory: 2Gi
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    # - type: ConfigChange
+    # - imageChangeParams:
+    #     automatic: true
+    #     containerNames:
+    #     - sonarqube
+    #     from:
+    #       kind: ImageStreamTag
+    #       name: sonarqube:5.5
+    #   type: ImageChange
+  status: {}
