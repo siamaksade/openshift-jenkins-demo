@@ -114,7 +114,7 @@ objects:
     source:
       contextDir: jenkins-master
       git:
-        uri: https://github.com/siamaksade/openshift-cd-demo.git
+        uri: https://github.com/OpenShiftDemos/openshift-cd-demo.git
         ref: openshift-3.3
       secrets: []
       type: Git
@@ -295,7 +295,7 @@ objects:
             timeoutSeconds: 5
           resources:
             limits:
-              memory: 2Gi
+              memory: 1Gi
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /opt/nexus-work

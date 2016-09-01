@@ -11,7 +11,7 @@
    def mvnCmd = &quot;mvn -s configuration/cicd-settings.xml&quot;
 
    stage &apos;Build&apos;
-   git branch: 'eap-7', url: &apos;https://github.com/siamaksade/openshift-tasks.git&apos;
+   git branch: 'eap-7', url: &apos;https://github.com/OpenShiftDemos/openshift-tasks.git&apos;
    def v = version()
    sh &quot;${mvnCmd} clean install -DskipTests=true&quot;
 
