@@ -41,10 +41,11 @@
    // deploy image
    sh &quot;${ocCmd} new-app tasks:latest -n dev&quot;
    sh &quot;${ocCmd} expose svc/tasks -n dev&quot;
-   // tag for stage
-   sh &quot;${ocCmd} tag dev/tasks:latest stage/tasks:${v}&quot;
 
    stage &apos;Deploy STAGE&apos;
+   input message: &quot;Promote to STAGE?&quot;, ok: &quot;Promote&quot;
+   // tag for stage
+   sh &quot;${ocCmd} tag dev/tasks:latest stage/tasks:${v}&quot;
    // clean up. keep the imagestream
    sh &quot;${ocCmd} delete bc,dc,svc,route -l app=tasks -n stage&quot;
    // deploy stage image
