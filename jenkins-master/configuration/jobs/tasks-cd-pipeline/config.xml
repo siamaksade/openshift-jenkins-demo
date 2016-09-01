@@ -5,28 +5,29 @@
   <keepDependencies>false</keepDependencies>
   <properties/>
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.0">
-    <script>node(&apos;jdk8&apos;) {
+    <script>node(&apos;maven&apos;) {
    // define commands
-   def ocCmd = &quot;/usr/bin/oc --token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token` --server=https://openshift.default.svc.cluster.local --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt&quot;
+   def ocCmd = &quot;/usr/local/bin/oc --token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token` --server=https://openshift.default.svc.cluster.local --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt&quot;
+   def mvnCmd = &quot;mvn -s configuration/cicd-settings.xml&quot;
 
    stage &apos;Build&apos;
-   git url: &apos;https://github.com/OpenShiftDemos/openshift-tasks.git&apos;
+   git branch: 'eap-7', url: &apos;https://github.com/siamaksade/openshift-tasks.git&apos;
    def v = version()
-   sh &quot;mvn -f pom-cicd.xml clean install -DskipTests=true&quot;
+   sh &quot;${mvnCmd} clean install -DskipTests=true&quot;
 
    stage &apos;Test and Analysis&apos;
    parallel (
        &apos;Test&apos;: {
-           sh &quot;mvn -f pom-cicd.xml test&quot;
+           sh &quot;${mvnCmd} test&quot;
            step([$class: &apos;JUnitResultArchiver&apos;, testResults: &apos;**/target/surefire-reports/TEST-*.xml&apos;])
        },
        &apos;Static Analysis&apos;: {
-           sh &quot;mvn -f pom-cicd.xml jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true&quot;
+           sh &quot;${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true&quot;
        }
    )
 
    stage &apos;Push to Nexus&apos;
-   sh &quot;mvn -f pom-cicd.xml deploy -DskipTests=true&quot;
+   sh &quot;${mvnCmd} deploy -DskipTests=true&quot;
 
    stage &apos;Deploy DEV&apos;
    sh &quot;rm -rf oc-build &amp;&amp; mkdir -p oc-build/deployments&quot;
@@ -34,7 +35,7 @@
    // clean up. keep the image stream
    sh &quot;${ocCmd} delete bc,dc,svc,route -l app=tasks -n dev&quot;
    // create build. override the exit code since it complains about exising imagestream
-   sh &quot;${ocCmd} new-build --name=tasks --image-stream=jboss-eap64-openshift --binary=true --labels=app=tasks -n dev || true&quot;
+   sh &quot;${ocCmd} new-build --name=tasks --image-stream=wildfly --binary=true --labels=app=tasks -n dev || true&quot;
    // build image
    sh &quot;${ocCmd} start-build tasks --from-dir=oc-build --wait=true -n dev&quot;
    // deploy image
