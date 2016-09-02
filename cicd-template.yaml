@@ -11,13 +11,19 @@ metadata:
     iconClass: icon-jenkins
     tags: instant-app,jenkins,gogs,nexus,cicd
   name: cicd
-message: The CI/CD infrastructure composed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD}.  The tutorial at https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3 contains more information about using this CI/CD demo.
+message: The CI/CD infrastructure composed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD} and Gogs username/password are gogs/${GOGS_PASSWORD}.  The tutorial at https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3 contains more information about using this CI/CD demo.
 parameters:
 - description: Password for the Jenkins user.
   displayName: Jenkins Password
   from: '[a-zA-Z0-9]{16}'
   generate: expression
   name: JENKINS_PASSWORD
+  required: true
+- description: Password for the Gogs user.
+  displayName: Gogs Password
+  from: '[a-zA-Z0-9]{16}'
+  generate: expression
+  name: GOGS_PASSWORD
   required: true
 - description: Username for PostgreSQL backend
   displayName: PostgreSQL User
@@ -557,6 +563,9 @@ objects:
       resources:
         limits:
           memory: 128Mi
+      env:
+      - name: GOGS_PASSWORD
+        value: ${GOGS_PASSWORD}
     volumes:
       - name: script-volume
         configMap:
@@ -635,12 +644,29 @@ objects:
       --form ssh_port=22 \
       --form http_port=3000 \
       --form app_url=http://${GOGSROUTE}/ \
-      --form log_root_path=/opt/gogs/log)
+      --form log_root_path=/opt/gogs/log \
+      --form admin_name=gogs \
+      --form admin_passwd=$GOGS_PASSWORD \
+      --form admin_confirm_passwd=$GOGS_PASSWORD \
+      --form admin_email=admin@gogs.com)
 
       if [ $RETURN != "200" ]
       then
         exit 255
       fi
+
+      sleep 10
+
+      # import github repository
+      RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
+      -u gogs:$GOGS_PASSWORD -X POST http://$GOGSSVC:3000/api/v1/repos/migrate \
+      -d '{"clone_addr": "https://github.com/OpenShiftDemos/openshift-tasks.git","uid": 1,"repo_name": "openshift-tasks"}')
+
+      if [ $RETURN != "201" ]
+      then
+        exit 255
+      fi
+
 # SonarQube
 - apiVersion: v1
   kind: Service
