@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: cicd-gogs
+  name: cicd
 labels:
-  template: cicd-gogs
+  template: cicd
   group: cicd
 metadata:
   annotations:
     description: Creates the CI/CD infrastructure with Jenins, Gogs, Nexus and SonarQube
     iconClass: icon-jenkins
     tags: instant-app,jenkins,gogs,nexus,cicd
-  name: cicd-gogs
+  name: cicd
 message: The CI/CD infrastructure composed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD}.  The tutorial at https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3 contains more information about using this CI/CD demo.
 parameters:
 - description: Password for the Jenkins user.
