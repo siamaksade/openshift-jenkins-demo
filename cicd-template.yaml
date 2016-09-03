@@ -584,12 +584,14 @@ objects:
 
       set -x
 
-      # Use the oc client to get the url for the gogs route and service
+      # Use the oc client to get the url for the gogs and jenkins route and service
       GOGSSVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
       GOGSROUTE=$(oc get route gogs -o template --template='{{.spec.host}}')
+      JENKINSSVC=$(oc get svc jenkins -o template --template='{{.spec.clusterIP}}')
 
-      # Use the oc client to get the postgres variables into the current shell"
+      # Use the oc client to get the postgres and jenkins variables into the current shell
       eval $(oc env dc/postgresql-gogs --list | grep -v \#)
+      eval $(oc env dc/jenkins --list | grep -v \#)
 
       # postgres has a readiness probe, so checking if there is at least one
       # endpoint means postgres is alive and ready, so we can then attempt to install gogs
@@ -658,15 +660,45 @@ objects:
       sleep 10
 
       # import github repository
+      cat <<EOF > /tmp/data.json
+      {
+        "clone_addr": "https://github.com/OpenShiftDemos/openshift-tasks.git",
+        "uid": 1,
+        "repo_name": "openshift-tasks"
+      }
+      EOF
+
       RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
-      -u gogs:$GOGS_PASSWORD -X POST http://$GOGSSVC:3000/api/v1/repos/migrate \
-      -d '{"clone_addr": "https://github.com/OpenShiftDemos/openshift-tasks.git","uid": 1,"repo_name": "openshift-tasks"}')
+      -u gogs:$GOGS_PASSWORD -X POST http://$GOGSSVC:3000/api/v1/repos/migrate -d @/tmp/data.json)
 
       if [ $RETURN != "201" ]
       then
         exit 255
       fi
 
+      sleep 5
+
+      # add webhook to Gogs to trigger pipeline on push
+      cat <<EOF > /tmp/data.json
+      {
+        "type": "gogs",
+        "config": {
+          "url": "http://admin:$JENKINS_PASSWORD@$JENKINSSVC/job/tasks-cd-pipeline/build?delay=0sec",
+          "content_type": "json"
+        },
+        "events": [
+          "push"
+        ],
+        "active": true
+      }
+      EOF
+      RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
+      -u gogs:$GOGS_PASSWORD -X POST http://$GOGSSVC:3000/api/v1/repos/gogs/openshift-tasks/hooks -d @/tmp/data.json)
+
+      if [ $RETURN != "201" ]
+      then
+        exit 255
+      fi
 # SonarQube
 - apiVersion: v1
   kind: Service
