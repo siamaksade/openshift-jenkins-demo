@@ -2,7 +2,7 @@
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus and SonarQube on OpenShift. On every pipeline execution, the code goes through the following steps:
 
-1. Code is cloned from Git, built, tested and analyzed for bugs and bad patterns
+1. Code is cloned from Gogs, built, tested and analyzed for bugs and bad patterns
 2. The WAR artifact is pushed to Nexus Repository manager
 3. A Docker image (_tasks:latest_) is built based on the _Tasks_ application WAR artifact deployed on JBoss EAP 6
 4. The _Tasks_ Docker image is deployed in a fresh new container in DEV project
@@ -12,6 +12,9 @@ This repository includes the infrastructure and pipeline definition for continuo
 The following diagram shows the steps included in the deployment pipeline:
 
 ![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.2/images/pipeline.png)
+
+The application used in this pipeline is a JAX-RS application which is available on GitHub and is imported into Gogs during the setup process:
+[https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
 # Setup
 
