@@ -59,7 +59,7 @@ def version() {
 }
 
 </script>
-    <sandbox>false</sandbox>
+    <sandbox>true</sandbox>
   </definition>
   <triggers/>
 </flow-definition>
