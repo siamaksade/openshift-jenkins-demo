@@ -11,7 +11,7 @@ This repository includes the infrastructure and pipeline definition for continuo
 
 The following diagram shows the steps included in the deployment pipeline:
 
-![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.2/images/pipeline.png)
 
 # Setup
 
@@ -60,7 +60,7 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 4. Add a webhook in [GitHub](https://developer.github.com/webhooks/creating/#setting-up-a-webhook) or [Gogs](https://gogs.io/docs/features/webhook) to trigger the pipeline whenever a change is pushed to the git repository. Use pipeline job's _Build Now_ url as the webhook url.
 
-  If using Gogs, webhooks configuration is in repository's _Settings &gt; Webhooks_ and the _tasks-cd-pipeline_ webhook url is http://jenkins:8080/job/tasks-cd-pipeline/build?delay=0sec. 
+  If using Gogs, webhooks configuration is in repository's _Settings &gt; Webhooks_ and the _tasks-cd-pipeline_ webhook url is http://jenkins:8080/job/tasks-cd-pipeline/build?delay=0sec.
 
   _Note:_ if GitHub is used and Jenkins route is not accessible from the Internet, use SCM Polling instead of webhooks to trigger builds.
 
@@ -74,4 +74,4 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 9. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
-![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/jenkins-pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.2/images/jenkins-pipeline.png)
