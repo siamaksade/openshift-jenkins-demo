@@ -11,7 +11,7 @@ This repository includes the infrastructure and pipeline definition for continuo
 
 The following diagram shows the steps included in the deployment pipeline:
 
-![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.3/images/pipeline.png)
 
 # Setup
 
@@ -45,7 +45,7 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 3. During pipeline execution, verify a new Jenkins slave pod is created within the _CI/CD_ project to execute the pipeline. Pipeline executions suspends at STAGE phase, and waits for the deployment managers approval to proceed. Click on on _Deploy to STAGE_ step on the pipeline and then _Promote_.
 
-![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/jenkins-pipeline-input.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.3/images/jenkins-pipeline-input.png)
 
 4. After pipeline completion, demonstrate the following:
   * Explore the ```snapshots``` repository in Nexus and verify ```openshift-tasks``` is pushed to the repository
@@ -63,4 +63,4 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 
 9. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
-![](https://raw.githubusercontent.com/OpenShiftDemos/openshift-cd-demo/master/images/jenkins-pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.3/images/jenkins-pipeline.png)
