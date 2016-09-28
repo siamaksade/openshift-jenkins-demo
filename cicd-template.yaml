@@ -240,22 +240,22 @@ objects:
     to:
       kind: Service
       name: nexus
-# - apiVersion: v1
-#   kind: ImageStream
-#   metadata:
-#     labels:
-#       app: nexus
-#     name: nexus
-#   spec:
-#     tags:
-#     - annotations:
-#         description: The Nexus Docker image
-#         tags: nexus
-#       from:
-#         kind: DockerImage
-#         name: openshiftdemos/nexus:2.13.0-01
-#       importPolicy: {}
-#       name: "2.13.0-01"
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: nexus
+    name: nexus
+  spec:
+    tags:
+    - annotations:
+        description: The Nexus Docker image
+        tags: nexus
+      from:
+        kind: DockerImage
+        name: openshiftdemos/nexus:2.13.0-01
+      importPolicy: {}
+      name: "2.13.0-01"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -276,7 +276,7 @@ objects:
           deploymentconfig: nexus
       spec:
         containers:
-        - image: "openshiftdemos/nexus:2.13.0-01"
+        - image: ' '
           imagePullPolicy: Always
           name: nexus
           ports:
@@ -315,14 +315,14 @@ objects:
           name: nexus-data
     triggers:
     - type: ConfigChange
-    # - imageChangeParams:
-    #     automatic: true
-    #     containerNames:
-    #     - nexus
-    #     from:
-    #       kind: ImageStreamTag
-    #       name: nexus:2.13.0-01
-    #   type: ImageChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nexus
+        from:
+          kind: ImageStreamTag
+          name: nexus:2.13.0-01
+      type: ImageChange
   status: {}
 # Gogs
 - apiVersion: v1
@@ -376,23 +376,23 @@ objects:
     to:
       kind: Service
       name: gogs
-# - apiVersion: v1
-#   kind: ImageStream
-#   metadata:
-#     name: gogs
-#     labels:
-#       app: gogs
-#   spec:
-#     tags:
-#     - annotations:
-#         description: The Gogs git server docker image
-#         tags: gogs,go,golang
-#         version: "latest"
-#       from:
-#         kind: DockerImage
-#         name: openshiftdemos/gogs:latest
-#       importPolicy: {}
-#       name: "latest"
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: gogs
+    labels:
+      app: gogs
+  spec:
+    tags:
+    - annotations:
+        description: The Gogs git server docker image
+        tags: gogs,go,golang
+        version: "latest"
+      from:
+        kind: DockerImage
+        name: openshiftdemos/gogs:latest
+      importPolicy: {}
+      name: "latest"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -413,8 +413,7 @@ objects:
           deploymentconfig: gogs
       spec:
         containers:
-        - image: "openshiftdemos/gogs:latest"
-        # - image: " "
+        - image: " "
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -448,14 +447,14 @@ objects:
         terminationGracePeriodSeconds: 30
     triggers:
     - type: ConfigChange
-    # - imageChangeParams:
-    #     automatic: true
-    #     containerNames:
-    #     - gogs
-    #     from:
-    #       kind: ImageStreamTag
-    #       name: gogs:latest
-    #   type: ImageChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - gogs
+        from:
+          kind: ImageStreamTag
+          name: gogs:latest
+      type: ImageChange
   status: {}
 - apiVersion: v1
   kind: DeploymentConfig
@@ -489,8 +488,7 @@ objects:
             value: ${GOGS_POSTGRESQL_PASSWORD}
           - name: POSTGRESQL_DATABASE
             value: gogs
-          image: 'centos/postgresql-95-centos7:latest'
-          # image: ' '
+          image: ' '
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -500,7 +498,7 @@ objects:
             tcpSocket:
               port: 5432
             timeoutSeconds: 1
-          name: postgresql-gogs
+          name: postgresql
           ports:
           - containerPort: 5432
             protocol: TCP
@@ -510,8 +508,7 @@ objects:
               - /bin/sh
               - -i
               - -c
-              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c
-                'SELECT 1'
+              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -535,14 +532,15 @@ objects:
         - emptyDir: {}
           name: postgresql-data
     triggers:
-    # - imageChangeParams:
-    #     containerNames:
-    #     - postgresql
-    #     from:
-    #       kind: ImageStreamTag
-    #       name: postgresql:latest
-    #       namespace: openshift
-    #   type: ImageChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - postgresql
+        from:
+          kind: ImageStreamTag
+          name: postgresql:9.5
+          namespace: openshift
+      type: ImageChange
     - type: ConfigChange
   status: {}
 - apiVersion: v1
@@ -750,23 +748,23 @@ objects:
     to:
       kind: Service
       name: sonarqube
-# - apiVersion: v1
-#   kind: ImageStream
-#   metadata:
-#     labels:
-#       app: sonarqube
-#     name: sonarqube
-#   spec:
-#     tags:
-#     - annotations:
-#         description: The SonarQube Docker image
-#         tags: sonarqube
-#         version: "5.5"
-#       from:
-#         kind: DockerImage
-#         name: openshiftdemos/sonarqube:5.5
-#       importPolicy: {}
-#       name: "5.5"
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: sonarqube
+    name: sonarqube
+  spec:
+    tags:
+    - annotations:
+        description: The SonarQube Docker image
+        tags: sonarqube
+        version: "6.0"
+      from:
+        kind: DockerImage
+        name: openshiftdemos/sonarqube:6.0
+      importPolicy: {}
+      name: "6.0"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -798,8 +796,7 @@ objects:
             value: ${SONAR_POSTGRESQL_PASSWORD}
           - name: POSTGRESQL_DATABASE
             value: sonar
-          image: 'centos/postgresql-95-centos7:latest'
-          # image: ' '
+          image: ' '
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -819,8 +816,7 @@ objects:
               - /bin/sh
               - -i
               - -c
-              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c
-                'SELECT 1'
+              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -845,14 +841,15 @@ objects:
           name: postgresql-data
     test: false
     triggers:
-    # - imageChangeParams:
-    #     containerNames:
-    #     - postgresql
-    #     from:
-    #       kind: ImageStreamTag
-    #       name: postgresql:9.5
-    #       namespace: openshift
-    #   type: ImageChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - postgresql
+        from:
+          kind: ImageStreamTag
+          name: postgresql:9.5
+          namespace: openshift
+      type: ImageChange
     - type: ConfigChange
   status: {}
 - apiVersion: v1
@@ -893,8 +890,7 @@ objects:
             value: jdbc:postgresql://postgresql-sonarqube/sonar
           - name: SONARQUBE_JDBC_USERNAME
             value: ${POSTGRESQL_USER}
-          # image: " "
-          image: "openshiftdemos/sonarqube:6.0"
+          image: ' '
           imagePullPolicy: IfNotPresent
           name: sonarqube
           ports:
@@ -928,13 +924,13 @@ objects:
         terminationGracePeriodSeconds: 30
     test: false
     triggers:
-    # - type: ConfigChange
-    # - imageChangeParams:
-    #     automatic: true
-    #     containerNames:
-    #     - sonarqube
-    #     from:
-    #       kind: ImageStreamTag
-    #       name: sonarqube:5.5
-    #   type: ImageChange
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - sonarqube
+        from:
+          kind: ImageStreamTag
+          name: sonarqube:6.0
+      type: ImageChange
   status: {}
