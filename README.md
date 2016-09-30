@@ -21,28 +21,31 @@ The application used in this pipeline is a JAX-RS application which is available
 Create projects for CI/CD components and Dev and Stage environments:
 
   ```
-  $ oc new-project dev --display-name="Tasks - Dev"
-  $ oc new-project stage --display-name="Tasks - Stage"
-  $ oc new-project cicd --display-name="CI/CD"
-  ```
-
-Create the CI/CD components based on the provided template
-
-  ```
-  $ oc process -f cicd-template.yaml | oc create -f -
+  oc new-project dev --display-name="Tasks - Dev"
+  oc new-project stage --display-name="Tasks - Stage"
+  oc new-project cicd --display-name="CI/CD"
   ```
 
 Jenkins needs to access OpenShift API to discover slave images as well accessing container images. Grant Jenkins service account enough privileges to invoke OpenShift API for the created projects:
 
   ```
-  $ oc policy add-role-to-user edit system:serviceaccount:cicd:default -n cicd
-  $ oc policy add-role-to-user edit system:serviceaccount:cicd:default -n dev
-  $ oc policy add-role-to-user edit system:serviceaccount:cicd:default -n stage
+  oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
+  oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
   ```
+Create the CI/CD components based on the provided template
+
+  ```
+  oc process -f cicd-template.yaml | oc create -f -
+  ```
+
+__Note:__ you need ~6GB memory for running this demo.
 
 # Demo Guide
 
 1. Jenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. Click on ```tasks-cd-pipeline``` and _Configure_ and explore the pipeline definition.
+
+  __Default Jenkins credentials:__ _admin/password_
+  __Default Gogs credentials:__ _admin/gogs_
 
 2. Run an instance of the pipeline by starting the ```tasks-cd-pipeline``` job.
 
@@ -68,3 +71,40 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 10. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
 ![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.3/images/jenkins-pipeline.png)
+
+# Troubleshoot
+
+* SonarQube sometimes fails to load quality profiles requires for static analysis. Scale down the SonarQube pod and its database to 0 and then scale them up to 1 again in order to re-initialize SonarQube.
+
+* Downloading the images might take a while depending on the network. Remove the _install-gogs_ pod and re-create the app retry Gogs initialization.
+
+  ```
+  $ oc delete pod install-gogs
+  $ oc process -f cicd-template.yaml | oc create -f -
+
+  pod "install-gogs" created
+  Error from server: routes "jenkins" already exists
+  Error from server: deploymentconfigs "jenkins" already exists
+  Error from server: serviceaccounts "jenkins" already exists
+  Error from server: rolebinding "jenkins_edit" already exists
+  Error from server: services "jenkins-jnlp" already exists
+  Error from server: services "jenkins" already exists
+  Error from server: services "nexus" already exists
+  Error from server: routes "nexus" already exists
+  Error from server: imagestreams "nexus" already exists
+  Error from server: deploymentconfigs "nexus" already exists
+  Error from server: services "gogs" already exists
+  Error from server: services "postgresql-gogs" already exists
+  Error from server: routes "gogs" already exists
+  Error from server: imagestreams "gogs" already exists
+  Error from server: deploymentconfigs "gogs" already exists
+  Error from server: deploymentconfigs "postgresql-gogs" already exists
+  Error from server: configmaps "gogs-install" already exists
+  Error from server: services "postgresql-sonarqube" already exists
+  Error from server: services "sonarqube" already exists
+  Error from server: routes "sonarqube" already exists
+  Error from server: imagestreams "sonarqube" already exists
+  Error from server: deploymentconfigs "postgresql-sonarqube" already exists
+  Error from server: deploymentconfigs "sonarqube" already exists
+  Error from server: buildconfigs "cicd-pipeline" already exists
+  ```

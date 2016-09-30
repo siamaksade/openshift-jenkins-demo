@@ -15,14 +15,12 @@ message: The CI/CD infrastructure composed of Jenkins, Gogs, Nexus Repository an
 parameters:
 - description: Password for the Jenkins user.
   displayName: Jenkins Password
-  from: '[a-zA-Z0-9]{16}'
-  generate: expression
+  value: password
   name: JENKINS_PASSWORD
   required: true
 - description: Password for the Gogs user.
   displayName: Gogs Password
-  from: '[a-zA-Z0-9]{16}'
-  generate: expression
+  value: password
   name: GOGS_PASSWORD
   required: true
 - description: Username for PostgreSQL backend
@@ -44,118 +42,100 @@ parameters:
   name: SONAR_POSTGRESQL_PASSWORD
   required: true
 objects:
-# Jenkins Master
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      app: jenkins
-    name: jenkins
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: jenkins-jnlp
-    labels:
-      app: jenkins
-  spec:
-    portalIP: ""
-    ports:
-    - name: agent
-      nodePort: 0
-      port: 50000
-      protocol: TCP
-      targetPort: 50000
-    selector:
-      app: jenkins
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      service.alpha.openshift.io/dependencies: '[{"name": "jenkins-jnlp", "namespace":
-        "", "kind": "Service"}]'
-      service.openshift.io/infrastructure: "true"
-    creationTimestamp: null
-    name: jenkins
-    labels:
-      app: jenkins
-  spec:
-    portalIP: ""
-    ports:
-    - name: web
-      nodePort: 0
-      port: 80
-      protocol: TCP
-      targetPort: 8080
-    selector:
-      app: jenkins
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Route
-  metadata:
-    labels:
-      app: jenkins
-    name: jenkins
-  spec:
-    port:
-      targetPort: 8080
-    to:
-      kind: Service
-      name: jenkins
+# Pipeline
 - apiVersion: v1
   kind: BuildConfig
   metadata:
     labels:
-      app: jenkins
-    name: jenkins
+      app: cicd-pipeline
+      name: cicd-pipeline
+    name: cicd-pipeline
   spec:
-    output:
-      to:
-        kind: ImageStreamTag
-        name: jenkins:latest
-    resources:
-      limits:
-        memory: 1Gi
+    runPolicy: Serial
     source:
-      contextDir: jenkins-master
-      git:
-        uri: https://github.com/OpenShiftDemos/openshift-cd-demo.git
-        ref: openshift-3.3
-      secrets: []
-      type: Git
+      type: None
     strategy:
-      sourceStrategy:
-        from:
-          kind: ImageStreamTag
-          name: jenkins:1
-          namespace: openshift
-      type: Source
-    triggers:
-    - type: ConfigChange
-    - imageChange: {}
-      type: ImageChange
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          node('maven') {
+             // define commands
+             def ocCmd = "/usr/local/bin/oc --token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token` --server=https://openshift.default.svc.cluster.local --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+             def mvnCmd = "mvn -s configuration/cicd-settings.xml"
+
+             stage 'Build'
+             git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
+             def v = version()
+             sh "${mvnCmd} clean install -DskipTests=true"
+
+             stage 'Test and Analysis'
+             parallel (
+                 'Test': {
+                     sh "${mvnCmd} test"
+                     step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+                 },
+                 'Static Analysis': {
+                     sh "${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
+                 }
+             )
+
+             stage 'Push to Nexus'
+             sh "${mvnCmd} deploy -DskipTests=true"
+
+             stage 'Deploy DEV'
+             sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+             sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
+             // clean up. keep the image stream
+             sh "${ocCmd} delete bc,dc,svc,route -l app=tasks -n dev"
+             // create build. override the exit code since it complains about exising imagestream
+             sh "${ocCmd} new-build --name=tasks --image-stream=wildfly --binary=true --labels=app=tasks -n dev || true"
+             // build image
+             sh "${ocCmd} start-build tasks --from-dir=oc-build --wait=true -n dev"
+             // deploy image
+             sh "${ocCmd} new-app tasks:latest -n dev"
+             sh "${ocCmd} expose svc/tasks -n dev"
+
+             stage 'Deploy STAGE'
+             input message: "Promote to STAGE?", ok: "Promote"
+             // tag for stage
+             sh "${ocCmd} tag dev/tasks:latest stage/tasks:${v}"
+             // clean up. keep the imagestream
+             sh "${ocCmd} delete bc,dc,svc,route -l app=tasks -n stage"
+             // deploy stage image
+             sh "${ocCmd} new-app tasks:${v} -n stage"
+             sh "${ocCmd} expose svc/tasks -n stage"
+          }
+
+          def version() {
+            def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
+            matcher ? matcher[0][1] : null
+          }
+      type: JenkinsPipeline
+      type: Generic
   status:
     lastVersion: 0
+# Jenkins Master
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: jenkins
+  spec:
+    to:
+      kind: Service
+      name: jenkins
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    labels:
-      app: jenkins
     name: jenkins
   spec:
     replicas: 1
     selector:
-      app: jenkins
-      deploymentconfig: jenkins
+      name: jenkins
     strategy:
       type: Recreate
     template:
       metadata:
         labels:
-          app: jenkins
-          deploymentconfig: jenkins
+          name: jenkins
       spec:
         containers:
         - capabilities: {}
@@ -166,6 +146,8 @@ objects:
             value: https://kubernetes.default:443
           - name: KUBERNETES_TRUST_CERTIFICATES
             value: "true"
+          - name: JNLP_SERVICE_NAME
+            value: jenkins-jnlp
           image: ' '
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -193,13 +175,12 @@ objects:
             name: jenkins-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
+        serviceAccountName: jenkins
         volumes:
         - emptyDir:
             medium: ""
           name: jenkins-data
-    test: false
     triggers:
-    - type: ConfigChange
     - imageChangeParams:
         automatic: true
         containerNames:
@@ -207,7 +188,73 @@ objects:
         from:
           kind: ImageStreamTag
           name: jenkins:latest
+          namespace: openshift
+        lastTriggeredImage: ""
       type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: jenkins
+- apiVersion: v1
+  groupNames: null
+  kind: RoleBinding
+  metadata:
+    name: jenkins_edit
+  roleRef:
+    name: edit
+  subjects:
+  - kind: ServiceAccount
+    name: jenkins
+- apiVersion: v1
+  groupNames: null
+  kind: RoleBinding
+  metadata:
+    name: default_edit
+  roleRef:
+    name: edit
+  subjects:
+  - kind: ServiceAccount
+    name: default
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: jenkins-jnlp
+    labels:
+      app: jenkins
+  spec:
+    ports:
+    - name: agent
+      nodePort: 0
+      port: 50000
+      protocol: TCP
+      targetPort: 50000
+    selector:
+      name: jenkins
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name": "jenkins-jnlp", "namespace": "", "kind": "Service"}]'
+      service.openshift.io/infrastructure: "true"
+    creationTimestamp: null
+    name: jenkins
+    labels:
+      app: jenkins
+  spec:
+    portalIP: ""
+    ports:
+    - name: web
+      nodePort: 0
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: jenkins
+    sessionAffinity: None
+    type: ClusterIP
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service
@@ -302,7 +349,7 @@ objects:
             timeoutSeconds: 5
           resources:
             limits:
-              memory: 1Gi
+              memory: 512Mi
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /opt/nexus-work
@@ -516,7 +563,7 @@ objects:
             timeoutSeconds: 1
           resources:
             limits:
-              memory: 512Mi
+              memory: 256Mi
           securityContext:
             capabilities: {}
             privileged: false
@@ -598,7 +645,7 @@ objects:
       oc get ep postgresql-gogs -o yaml | grep "\- addresses:"
       while [ ! $? -eq 0 ]
       do
-        sleep 5
+        sleep 10
         x=$(( $x + 1 ))
 
         if [ $x -gt 100 ]
@@ -614,7 +661,7 @@ objects:
       oc get ep gogs -o yaml | grep "\- addresses:"
       while [ ! $? -eq 0 ]
       do
-        sleep 5
+        sleep 10
         x=$(( $x + 1 ))
 
         if [ $x -gt 100 ]
@@ -629,7 +676,9 @@ objects:
       # more
       sleep 10
 
-      RETURN=$(curl -o /dev/null -sL -w "%{http_code}" http://$GOGSSVC:3000/install \
+      # RETURN=$(curl -o /dev/null -sL -w "%{http_code}" http://$GOGSSVC:3000/install \
+      # RETURN=$(curl -o /dev/null -sL -v http://$GOGSSVC:3000/install \
+      RETURN=$(curl -o /dev/null -sL --post302 -w "%{http_code}" http://$GOGSSVC:3000/install \
       --form db_type=PostgreSQL \
       --form db_host=postgresql-gogs:5432 \
       --form db_user=$POSTGRESQL_USER \
@@ -824,7 +873,7 @@ objects:
             timeoutSeconds: 1
           resources:
             limits:
-              memory: 512Mi
+              memory: 256Mi
           securityContext:
             capabilities: {}
             privileged: false
@@ -916,7 +965,7 @@ objects:
             timeoutSeconds: 5
           resources:
             limits:
-              memory: 2Gi
+              memory: 1Gi
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
         restartPolicy: Always
