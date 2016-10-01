@@ -40,7 +40,7 @@ Create the CI/CD components based on the provided template
 
 __Note:__ you need ~6GB memory for running this demo.
 
-# Demo Guide
+# Guide
 
 1. Jenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. Click on ```tasks-cd-pipeline``` and _Configure_ and explore the pipeline definition.
 
@@ -72,11 +72,14 @@ __Note:__ you need ~6GB memory for running this demo.
 
 ![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.3/images/jenkins-pipeline.png)
 
+# Enabling OpenShift 3.3 Pipelines with "oc cluster"
+Pipeline in OpenShift 3.3 is a tech preview feature and disabled by default. The steps required to enable this feature is detailed in [OpenShift documentation](https://access.redhat.com/documentation/en/openshift-container-platform/3.3/paged/installation-and-configuration/chapter-29-customizing-the-web-console#web-console-enable-tech-preview-feature).
+
 # Troubleshoot
 
 * SonarQube sometimes fails to load quality profiles requires for static analysis. Scale down the SonarQube pod and its database to 0 and then scale them up to 1 again in order to re-initialize SonarQube.
 
-* Downloading the images might take a while depending on the network. Remove the _install-gogs_ pod and re-create the app retry Gogs initialization.
+* Downloading the images might take a while depending on the network. Remove the _install-gogs_ pod and re-create the app to retry Gogs initialization.
 
   ```
   $ oc delete pod install-gogs
@@ -87,24 +90,5 @@ __Note:__ you need ~6GB memory for running this demo.
   Error from server: deploymentconfigs "jenkins" already exists
   Error from server: serviceaccounts "jenkins" already exists
   Error from server: rolebinding "jenkins_edit" already exists
-  Error from server: services "jenkins-jnlp" already exists
-  Error from server: services "jenkins" already exists
-  Error from server: services "nexus" already exists
-  Error from server: routes "nexus" already exists
-  Error from server: imagestreams "nexus" already exists
-  Error from server: deploymentconfigs "nexus" already exists
-  Error from server: services "gogs" already exists
-  Error from server: services "postgresql-gogs" already exists
-  Error from server: routes "gogs" already exists
-  Error from server: imagestreams "gogs" already exists
-  Error from server: deploymentconfigs "gogs" already exists
-  Error from server: deploymentconfigs "postgresql-gogs" already exists
-  Error from server: configmaps "gogs-install" already exists
-  Error from server: services "postgresql-sonarqube" already exists
-  Error from server: services "sonarqube" already exists
-  Error from server: routes "sonarqube" already exists
-  Error from server: imagestreams "sonarqube" already exists
-  Error from server: deploymentconfigs "postgresql-sonarqube" already exists
-  Error from server: deploymentconfigs "sonarqube" already exists
-  Error from server: buildconfigs "cicd-pipeline" already exists
+  ...
   ```
