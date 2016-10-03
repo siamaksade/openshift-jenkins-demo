@@ -18,7 +18,7 @@ The application used in this pipeline is a JAX-RS application which is available
 
 # Setup
 
-Follow these [instructions](https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3/docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create projects for CI/CD components and Dev and Stage environments:
+Follow these [instructions](https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3/docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
   ```
   oc new-project dev --display-name="Tasks - Dev"
@@ -29,8 +29,8 @@ Follow these [instructions](https://github.com/OpenShiftDemos/openshift-cd-demo/
 Jenkins needs to access OpenShift API to discover slave images as well accessing container images. Grant Jenkins service account enough privileges to invoke OpenShift API for the created projects:
 
   ```
-  oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
-  oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
+  oc policy add-role-to-user edit system:serviceaccount:cicd:default -n dev
+  oc policy add-role-to-user edit system:serviceaccount:cicd:default -n stage
   ```
 Create the CI/CD components based on the provided template
 
@@ -92,3 +92,5 @@ Pipeline in OpenShift 3.3 is a tech preview feature and disabled by default. The
   Error from server: rolebinding "jenkins_edit" already exists
   ...
   ```
+
+* If the cicd-pipeline Jenkins job has disappeared, scale Jenkins pod to 0 and up to 1 again to force a job sync with OpenShift pipelines.

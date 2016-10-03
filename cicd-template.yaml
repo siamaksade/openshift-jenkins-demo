@@ -49,7 +49,7 @@ objects:
     labels:
       app: cicd-pipeline
       name: cicd-pipeline
-    name: cicd-pipeline
+    name: tasks-pipeline
   spec:
     runPolicy: Serial
     source:
@@ -59,7 +59,7 @@ objects:
         jenkinsfile: |-
           node('maven') {
              // define commands
-             def ocCmd = "/usr/local/bin/oc --token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token` --server=https://openshift.default.svc.cluster.local --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+             def ocCmd = "oc --token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token` --server=https://openshift.default.svc.cluster.local --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt"
              def mvnCmd = "mvn -s configuration/cicd-settings.xml"
 
              stage 'Build'
@@ -87,7 +87,7 @@ objects:
              // clean up. keep the image stream
              sh "${ocCmd} delete bc,dc,svc,route -l app=tasks -n dev"
              // create build. override the exit code since it complains about exising imagestream
-             sh "${ocCmd} new-build --name=tasks --image-stream=wildfly --binary=true --labels=app=tasks -n dev || true"
+             sh "${ocCmd} new-build --name=tasks --image-stream=jboss-eap70-openshift --binary=true --labels=app=tasks -n dev || true"
              // build image
              sh "${ocCmd} start-build tasks --from-dir=oc-build --wait=true -n dev"
              // deploy image
@@ -175,7 +175,6 @@ objects:
             name: jenkins-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
-        serviceAccountName: jenkins
         volumes:
         - emptyDir:
             medium: ""
@@ -192,20 +191,6 @@ objects:
         lastTriggeredImage: ""
       type: ImageChange
     - type: ConfigChange
-- apiVersion: v1
-  kind: ServiceAccount
-  metadata:
-    name: jenkins
-- apiVersion: v1
-  groupNames: null
-  kind: RoleBinding
-  metadata:
-    name: jenkins_edit
-  roleRef:
-    name: edit
-  subjects:
-  - kind: ServiceAccount
-    name: jenkins
 - apiVersion: v1
   groupNames: null
   kind: RoleBinding
