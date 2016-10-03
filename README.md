@@ -18,7 +18,7 @@ The application used in this pipeline is a JAX-RS application which is available
 
 # Setup
 
-Create projects for CI/CD components and Dev and Stage environments:
+Follow these [instructions](https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3/docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create projects for CI/CD components and Dev and Stage environments:
 
   ```
   oc new-project dev --display-name="Tasks - Dev"
