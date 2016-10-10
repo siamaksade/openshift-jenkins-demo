@@ -42,31 +42,35 @@ __Note:__ you need ~6GB memory for running this demo.
 
 # Guide
 
-1. Jenkins has the Pipeline plugin pre-installed. A Jenkins pipeline job is also pre-configured which clones Tasks JAX-RS application source code from GitHub, builds, deploys and promotes the result through the deployment pipeline. Click on ```tasks-cd-pipeline``` and _Configure_ and explore the pipeline definition.
+1. A Jenkins pipeline is pre-configured which clones Tasks application source code from Gogs (running on OpenShift), builds, deploys and promotes the result through the deployment pipeline. In the CI/CD project, click on _Builds_ and then _Pipelines_ to see the list of defined pipelines. If the [tech preview pipeline feature](https://docs.openshift.com/container-platform/3.3/install_config/web_console_customization.html#web-console-enable-tech-preview-feature) is not enabled on your OpenShift cluster, go directly to the pipelines section with this url: https://OPENSHIFT.MASTER/console/project/cicd/browse/pipelines
 
-  __Default Jenkins credentials:__ _admin/password_
-  __Default Gogs credentials:__ _admin/gogs_
+  Click on _tasks-pipeline_ and _Configuration_ and explore the pipeline definition.
 
-2. Run an instance of the pipeline by starting the ```tasks-cd-pipeline``` job.
+  You can also explore the pipeline job in Jenkins by clicking on the Jenkins route url, logging in with the following credentials, clicking on _tasks-pipeline_ and _Configure_.
+
+  __Jenkins credentials:__ _admin/password_  
+  __Gogs credentials:__ _admin/gogs_
+
+2. Run an instance of the pipeline by starting the _tasks-pipeline_ in OpenShift or Jenkins.
 
 3. During pipeline execution, verify a new Jenkins slave pod is created within _CI/CD_ project to execute the pipeline.
 
 4. Pipelines pauses at _Deploy STAGE_ for approval in order to promote the build to the STAGE environment. Click on this step on the pipeline and then _Promote_.
 
 5. After pipeline completion, demonstrate the following:
-  * Explore the ```snapshots``` repository in Nexus and verify ```openshift-tasks``` is pushed to the repository
+  * Explore the _snapshots_ repository in Nexus and verify _openshift-tasks_ is pushed to the repository
   * Explore SonarQube and verify a project is created with metrics, stats, code coverage, etc
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
   * Explore _Tasks - Stage_ project in OpenShift console and verify the application is deployed in the STAGE environment  
 
 
-6. Clone the ```openshift-tasks``` git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
+6. Clone the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
 
 7. Check out Jenkins, a pipeline instance is created and is being executed. The pipeline will fail during unit tests due to the enabled unit test.
 
 8. Check out the failed unit and test ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` and run it in the IDE.
 
-9. Fix the test by modifying ```src/main/java/org/jboss/as/quickstarts/tasksrs/service/UserResource.java``` and uncommenting the sort function in ```getUsers``` method.
+9. Fix the test by modifying ```src/main/java/org/jboss/as/quickstarts/tasksrs/service/UserResource.java``` and uncommenting the sort function in _getUsers_ method.
 
 10. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
@@ -94,3 +98,10 @@ Pipeline in OpenShift 3.3 is a tech preview feature and disabled by default. The
   ```
 
 * If the cicd-pipeline Jenkins job has disappeared, scale Jenkins pod to 0 and up to 1 again to force a job sync with OpenShift pipelines.
+
+* If pipeline execution fails with ```error: no match for "jboss-eap70-openshift"```, import the jboss imagestreams in OpenShift.
+
+  ```
+  oc login -u system:admin
+  oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift
+  ```
