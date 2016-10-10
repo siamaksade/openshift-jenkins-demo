@@ -334,7 +334,7 @@ objects:
             timeoutSeconds: 5
           resources:
             limits:
-              memory: 512Mi
+              memory: 1Gi
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /opt/nexus-work
@@ -950,7 +950,7 @@ objects:
             timeoutSeconds: 5
           resources:
             limits:
-              memory: 1Gi
+              memory: 1536Mi
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
         restartPolicy: Always
