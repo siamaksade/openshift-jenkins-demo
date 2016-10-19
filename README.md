@@ -49,7 +49,7 @@ __Note:__ you need ~6GB memory for running this demo.
   You can also explore the pipeline job in Jenkins by clicking on the Jenkins route url, logging in with the following credentials, clicking on _tasks-pipeline_ and _Configure_.
 
   __Jenkins credentials:__ _admin/password_  
-  __Gogs credentials:__ _admin/gogs_
+  __Gogs credentials:__ _gogs/password_
 
 2. Run an instance of the pipeline by starting the _tasks-pipeline_ in OpenShift or Jenkins.
 
