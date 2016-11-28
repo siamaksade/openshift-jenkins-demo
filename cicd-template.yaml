@@ -555,7 +555,7 @@ objects:
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /var/lib/pgsql/data
-            name: postgresql-data
+            name: postgresql-gogs
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
@@ -865,7 +865,7 @@ objects:
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /var/lib/pgsql/data
-            name: postgresql-data
+            name: postgresql-sonarqube
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
