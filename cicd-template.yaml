@@ -7,7 +7,7 @@ labels:
   group: cicd
 metadata:
   annotations:
-    description: Creates the CI/CD infrastructure with Jenins, Gogs, Nexus and SonarQube
+    description: Creates the CI/CD infrastructure with Jenkins, Gogs, Nexus and SonarQube
     iconClass: icon-jenkins
     tags: instant-app,jenkins,gogs,nexus,cicd
   name: cicd
