@@ -97,6 +97,7 @@ Pipeline in OpenShift 3.3 is a tech preview feature and disabled by default. The
 
   ```
   $ oc delete pod install-gogs
+  $ oc delete pods -l app=gogs
   $ oc process -f cicd-template.yaml | oc create -f -
 
   pod "install-gogs" created
