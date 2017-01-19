@@ -1,28 +1,11 @@
-# Local OpenShift Container Platform 3.3 Setup on Linux
+# Local OpenShift Origin 1.4 Setup on Linux
 
-1. Download and install the OpenShift CLI from [Red Hat Customer Portal](http://access.redhat.com)
+1. Download and install the OpenShift CLI from [OpenShift Origin Documentation](https://docs.openshift.org/latest/cli_reference/get_started_cli.html)
 
-2. Start up a cluster using ```oc cluster```.
-
-  ```
-  oc cluster up --metrics --image=registry.access.redhat.com/openshift3/ose
-  ```
-
-3. If you want to enable Pipeline tech preview feature, bring the cluster down, enable the pipelines and bring it up again.
+2. Start up a cluster using ```oc cluster --version=v1.4.0```.
 
   ```
-  oc cluster down
-
-  # create a script to enable pipelines
-  echo "window.OPENSHIFT_CONSTANTS.ENABLE_TECH_PREVIEW_FEATURE.pipelines = true;" \
-      > /var/lib/origin/openshift.local.config/master/tech-preview.js
-
-  # add the script to master-config as an extension
-  sed -i 's/extensionScript.*/extensionScripts:\n  - \/var\/lib\/origin\/openshift.local.config\/master\/tech-preview.js/' \
-      /var/lib/origin/openshift.local.config/master/master-config.yaml
-
-  # bring the cluster up using the existing configurations
-  oc cluster up --image=registry.access.redhat.com/openshift3/ose --use-existing-config
+  oc cluster up --metrics --version=
   ```
 
   __Note:__ use ```--public-hostname``` option with ```oc cluster``` to specify the network address
