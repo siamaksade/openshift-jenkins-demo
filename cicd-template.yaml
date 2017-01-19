@@ -13,11 +13,6 @@ metadata:
   name: cicd
 message: The CI/CD infrastructure composed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD} and Gogs username/password are gogs/${GOGS_PASSWORD}.  The tutorial at https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3 contains more information about using this CI/CD demo.
 parameters:
-- description: Password for the Jenkins user.
-  displayName: Jenkins Password
-  value: password
-  name: JENKINS_PASSWORD
-  required: true
 - description: Password for the Gogs user.
   displayName: Gogs Password
   value: password
@@ -42,6 +37,16 @@ parameters:
   name: SONAR_POSTGRESQL_PASSWORD
   required: true
 objects:
+- apiVersion: v1
+  groupNames: null
+  kind: RoleBinding
+  metadata:
+    name: default_edit
+  roleRef:
+    name: edit
+  subjects:
+  - kind: ServiceAccount
+    name: default
 # Pipeline
 - apiVersion: v1
   kind: BuildConfig
@@ -61,47 +66,57 @@ objects:
              // define commands
              def mvnCmd = "mvn -s configuration/cicd-settings.xml"
 
-             stage 'Build'
-             git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
-             def v = version()
-             sh "${mvnCmd} clean install -DskipTests=true"
+             stage ('Build') {
+               git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
+               sh "${mvnCmd} clean install -DskipTests=true"
+             }
 
-             stage 'Test and Analysis'
-             parallel (
-                 'Test': {
-                     sh "${mvnCmd} test"
-                     step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-                 },
-                 'Static Analysis': {
-                     sh "${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
-                 }
-             )
+             stage ('Test and Analysis') {
+               parallel (
+                   'Test': {
+                       sh "${mvnCmd} test"
+                       step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+                   },
+                   'Static Analysis': {
+                       sh "${mvnCmd} jacoco:report sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
+                   }
+               )
+             }
 
-             stage 'Push to Nexus'
-             sh "${mvnCmd} deploy -DskipTests=true"
+             stage ('Push to Nexus') {
+              sh "${mvnCmd} deploy -DskipTests=true"
+             }
 
-             stage 'Deploy DEV'
-             sh "rm -rf oc-build && mkdir -p oc-build/deployments"
-             sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
-             // clean up. keep the image stream
-             sh "oc delete bc,dc,svc,route -l app=tasks -n dev"
-             // create build. override the exit code since it complains about exising imagestream
-             sh "oc new-build --name=tasks --image-stream=jboss-eap70-openshift --binary=true --labels=app=tasks -n dev || true"
-             // build image
-             sh "oc start-build tasks --from-dir=oc-build --wait=true -n dev"
-             // deploy image
-             sh "oc new-app tasks:latest -n dev"
-             sh "oc expose svc/tasks -n dev"
+             stage ('Deploy DEV') {
+               sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+               sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
+               sh "oc project dev"
+               // clean up. keep the image stream
+               sh "oc delete bc,dc,svc,route -l app=tasks -n dev"
+               // create build. override the exit code since it complains about exising imagestream
+               sh "oc new-build --name=tasks --image-stream=jboss-eap70-openshift --binary=true --labels=app=tasks -n dev || true"
+               // build image
+               sh "oc start-build tasks --from-dir=oc-build --wait=true -n dev"
+               // deploy image
+               sh "oc new-app tasks:latest -n dev"
+               sh "oc expose svc/tasks -n dev"
+             }
 
-             stage 'Deploy STAGE'
-             input message: "Promote to STAGE?", ok: "Promote"
-             // tag for stage
-             sh "oc tag dev/tasks:latest stage/tasks:${v}"
-             // clean up. keep the imagestream
-             sh "oc delete bc,dc,svc,route -l app=tasks -n stage"
-             // deploy stage image
-             sh "oc new-app tasks:${v} -n stage"
-             sh "oc expose svc/tasks -n stage"
+             stage ('Deploy STAGE') {
+               timeout(time:5, unit:'MINUTES') {
+                  input message: "Promote to STAGE?", ok: "Promote"
+               }
+
+               def v = version()
+               // tag for stage
+               sh "oc tag dev/tasks:latest stage/tasks:${v}"
+               sh "oc project stage"
+               // clean up. keep the imagestream
+               sh "oc delete bc,dc,svc,route -l app=tasks -n stage"
+               // deploy stage image
+               sh "oc new-app tasks:${v} -n stage"
+               sh "oc expose svc/tasks -n stage"
+             }
           }
 
           def version() {
@@ -112,133 +127,6 @@ objects:
       type: Generic
   status:
     lastVersion: 0
-# Jenkins Master
-- apiVersion: v1
-  kind: Route
-  metadata:
-    name: jenkins
-  spec:
-    to:
-      kind: Service
-      name: jenkins
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    name: jenkins
-  spec:
-    replicas: 1
-    selector:
-      name: jenkins
-    strategy:
-      type: Recreate
-    template:
-      metadata:
-        labels:
-          name: jenkins
-      spec:
-        containers:
-        - capabilities: {}
-          env:
-          - name: JENKINS_PASSWORD
-            value: ${JENKINS_PASSWORD}
-          - name: KUBERNETES_MASTER
-            value: https://kubernetes.default:443
-          - name: KUBERNETES_TRUST_CERTIFICATES
-            value: "true"
-          - name: JNLP_SERVICE_NAME
-            value: jenkins-jnlp
-          image: ' '
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            httpGet:
-              path: /login
-              port: 8080
-            initialDelaySeconds: 120
-            timeoutSeconds: 3
-          name: jenkins
-          readinessProbe:
-            httpGet:
-              path: /login
-              port: 8080
-            initialDelaySeconds: 3
-            timeoutSeconds: 3
-          resources:
-            limits:
-              memory: 1Gi
-          securityContext:
-            capabilities: {}
-            privileged: false
-          terminationMessagePath: /dev/termination-log
-          volumeMounts:
-          - mountPath: /var/lib/jenkins
-            name: jenkins-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        volumes:
-        - emptyDir:
-            medium: ""
-          name: jenkins-data
-    triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - jenkins
-        from:
-          kind: ImageStreamTag
-          name: jenkins:latest
-          namespace: openshift
-        lastTriggeredImage: ""
-      type: ImageChange
-    - type: ConfigChange
-- apiVersion: v1
-  groupNames: null
-  kind: RoleBinding
-  metadata:
-    name: default_edit
-  roleRef:
-    name: edit
-  subjects:
-  - kind: ServiceAccount
-    name: default
-- apiVersion: v1
-  kind: Service
-  metadata:
-    name: jenkins-jnlp
-    labels:
-      app: jenkins
-  spec:
-    ports:
-    - name: agent
-      nodePort: 0
-      port: 50000
-      protocol: TCP
-      targetPort: 50000
-    selector:
-      name: jenkins
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      service.alpha.openshift.io/dependencies: '[{"name": "jenkins-jnlp", "namespace": "", "kind": "Service"}]'
-      service.openshift.io/infrastructure: "true"
-    creationTimestamp: null
-    name: jenkins
-    labels:
-      app: jenkins
-  spec:
-    portalIP: ""
-    ports:
-    - name: web
-      nodePort: 0
-      port: 80
-      protocol: TCP
-      targetPort: 8080
-    selector:
-      name: jenkins
-    sessionAffinity: None
-    type: ClusterIP
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service
@@ -949,7 +837,7 @@ objects:
             timeoutSeconds: 5
           resources:
             limits:
-              memory: 1536Mi
+              memory: 2Gi
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
         restartPolicy: Always
