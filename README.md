@@ -11,14 +11,19 @@ This repository includes the infrastructure and pipeline definition for continuo
 
 The following diagram shows the steps included in the deployment pipeline:
 
-![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.3/images/pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/ocp-3.3/images/pipeline.png)
 
 The application used in this pipeline is a JAX-RS application which is available on GitHub and is imported into Gogs during the setup process:
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
+# Prerequisites
+
+* 8+ GB memory available on OpenShift nodes
+* JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
+
 # Setup
 
-Follow these [instructions](https://github.com/OpenShiftDemos/openshift-cd-demo/tree/openshift-3.3/docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
+Follow these [instructions](https://github.com/OpenShiftDemos/openshift-cd-demo/tree/ocp-3.3/docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
   ```
   oc new-project dev --display-name="Tasks - Dev"
@@ -74,14 +79,19 @@ __Note:__ you need ~6GB memory for running this demo.
 
 10. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
-![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/openshift-3.3/images/jenkins-pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/ocp-3.3/images/jenkins-pipeline.png)
 
 # Enabling OpenShift 3.3 Pipelines with "oc cluster"
 Pipeline in OpenShift 3.3 is a tech preview feature and disabled by default. The steps required to enable this feature is detailed in [OpenShift documentation](https://access.redhat.com/documentation/en/openshift-container-platform/3.3/paged/installation-and-configuration/chapter-29-customizing-the-web-console#web-console-enable-tech-preview-feature).
 
 # Troubleshoot
 
-* SonarQube sometimes fails to load quality profiles requires for static analysis. Scale down the SonarQube pod and its database to 0 and then scale them up to 1 again in order to re-initialize SonarQube.
+* SonarQube sometimes fails to load quality profiles requires for static analysis.
+  ```
+  [ERROR] Failed to execute goal org.sonarsource.scanner.maven:sonar-maven-plugin:3.0.1:sonar (default-cli) on project jboss-tasks-rs: No quality profiles have been found, you probably don't have any
+  ```
+
+  Scale down the SonarQube pod and its PostgreSQL database to 0 and then scale them up to 1 again (first PostgreSQL, then SonarQube) to re-initialize SonarQube.
 
 * Downloading the images might take a while depending on the network. Remove the _install-gogs_ pod and re-create the app to retry Gogs initialization.
 
