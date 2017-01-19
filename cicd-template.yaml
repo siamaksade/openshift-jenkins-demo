@@ -84,6 +84,7 @@ objects:
              sh "rm -rf oc-build && mkdir -p oc-build/deployments"
              sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
              // clean up. keep the image stream
+             sh "oc project dev"
              sh "oc delete bc,dc,svc,route -l app=tasks -n dev"
              // create build. override the exit code since it complains about exising imagestream
              sh "oc new-build --name=tasks --image-stream=jboss-eap70-openshift --binary=true --labels=app=tasks -n dev || true"
@@ -95,6 +96,7 @@ objects:
 
              stage 'Deploy STAGE'
              input message: "Promote to STAGE?", ok: "Promote"
+             sh "oc project stage"
              // tag for stage
              sh "oc tag dev/tasks:latest stage/tasks:${v}"
              // clean up. keep the imagestream
