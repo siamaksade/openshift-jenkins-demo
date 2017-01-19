@@ -91,6 +91,7 @@ __Note:__ you need ~8GB memory for running this demo.
 
   ```
   $ oc delete pod install-gogs
+  $ oc delete pods -l app=gogs
   $ oc process -f cicd-template.yaml | oc create -f -
 
   pod "install-gogs" created
