@@ -35,10 +35,10 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 Create the CI/CD components based on the provided template
 
   ```
-  oc process -f cicd-template.yaml | oc create -f -
+  oc process -f cicd-template.yaml -n cicd | oc create -f - -n cicd
   ```
 
-__Note:__ you need ~6GB memory for running this demo.
+__Note:__ you need ~8GB memory for running this demo.
 
 # Guide
 
