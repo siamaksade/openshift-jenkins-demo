@@ -847,6 +847,7 @@ objects:
             timeoutSeconds: 5
           resources:
             limits:
+              cpu: 2
               memory: 2Gi
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
