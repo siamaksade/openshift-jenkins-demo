@@ -38,6 +38,12 @@ Create the CI/CD components based on the provided template
   oc process -f cicd-template.yaml -n cicd | oc create -f - -n cicd
   ```
 
+To use custom project names, change `cicd`, `dev` and `stage` in the above commands to
+your own names and use the following to create the demo:
+```
+oc process -f cicd-template.yaml -v DEV_PROJECT=dev-project-name -v STAGE_PROJECT=stage-project-name | oc create -f - -n cicd-project-name
+```
+
 __Note:__ you need ~8GB memory for running this demo.
 
 # Guide
