@@ -2,10 +2,10 @@
 
 1. Download and install the OpenShift CLI from [OpenShift Origin Documentation](https://docs.openshift.org/latest/cli_reference/get_started_cli.html)
 
-2. Start up a cluster using ```oc cluster --version=v1.4.0```.
+2. Start up a cluster using ```oc cluster```.
 
   ```
-  oc cluster up --metrics --version=
+  oc cluster up --metrics --version=v1.4.1
   ```
 
   __Note:__ use ```--public-hostname``` option with ```oc cluster``` to specify the network address
