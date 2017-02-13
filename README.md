@@ -23,7 +23,7 @@ The application used in this pipeline is a JAX-RS application which is available
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 # Setup
-Follow these [instructions](https://github.com/OpenShiftDemos/openshift-cd-demo/tree/ocp-3.4/docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
+Follow these [instructions](docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
   ```
   oc new-project dev --display-name="Tasks - Dev"
