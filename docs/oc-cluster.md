@@ -1,4 +1,4 @@
-# Local OpenShift Container Platform 3.4 Setup on Linux
+# Local OpenShift Container Platform 3.5 Setup on Linux
 
 1. Download and install the OpenShift CLI from [Red Hat Customer Portal](http://access.redhat.com)
 

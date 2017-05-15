@@ -1,6 +1,6 @@
-*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.3, origin-1.3, etc*
+*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.5, origin-1.3, etc*
 
-# CI/CD Demo - OpenShift Container Platform 3.4
+# CI/CD Demo - OpenShift Container Platform 3.5
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus and SonarQube on OpenShift. On every pipeline execution, the code goes through the following steps:
 
@@ -13,7 +13,7 @@ This repository includes the infrastructure and pipeline definition for continuo
 
 The following diagram shows the steps included in the deployment pipeline:
 
-![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/ocp-3.4/images/pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/ocp-3.5/images/pipeline.png)
 
 The application used in this pipeline is a JAX-RS application which is available on GitHub and is imported into Gogs during the setup process:
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
@@ -83,7 +83,7 @@ __Note:__ you need ~8GB memory for running this demo.
 
 10. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
-![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/ocp-3.4/images/jenkins-pipeline.png)
+![](https://github.com/OpenShiftDemos/openshift-cd-demo/blob/ocp-3.5/images/jenkins-pipeline.png)
 
 # Troubleshoot
 

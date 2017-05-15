@@ -319,9 +319,9 @@ objects:
         version: "latest"
       from:
         kind: DockerImage
-        name: openshiftdemos/gogs:latest
+        name: openshiftdemos/gogs:0.11.4
       importPolicy: {}
-      name: "latest"
+      name: "0.11.4"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -382,7 +382,7 @@ objects:
         - gogs
         from:
           kind: ImageStreamTag
-          name: gogs:latest
+          name: gogs:0.11.4
       type: ImageChange
   status: {}
 - apiVersion: v1
