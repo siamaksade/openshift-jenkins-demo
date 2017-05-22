@@ -48,6 +48,10 @@ parameters:
   value: 0.9.113
   name: GOGS_VERSION
   required: true
+- displayName: SonarQube version
+  value: "6.0"
+  name: SONARQUBE_VERSION
+  required: true
 - description: Webhook secret
   from: '[a-zA-Z0-9]{8}'
   generate: expression
@@ -244,8 +248,12 @@ objects:
               path: /content/groups/public
             timeoutSeconds: 5
           resources:
+            requests:
+              memory: 512Mi
+              cpu: 200m
             limits:
-              memory: 1Gi
+              memory: 2Gi
+              cpu: 1
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /opt/nexus-work
@@ -371,8 +379,12 @@ objects:
           - containerPort: 3000
             protocol: TCP
           resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
             limits:
               memory: 512Mi
+              cpu: 500m
           terminationMessagePath: /dev/termination-log
           readinessProbe:
             failureThreshold: 3
@@ -428,7 +440,6 @@ objects:
     strategy:
       recreateParams:
         timeoutSeconds: 600
-      resources: {}
       type: Recreate
     template:
       metadata:
@@ -471,7 +482,11 @@ objects:
             successThreshold: 1
             timeoutSeconds: 1
           resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
             limits:
+              cpu: 200m
               memory: 256Mi
           securityContext:
             capabilities: {}
@@ -738,12 +753,11 @@ objects:
     - annotations:
         description: The SonarQube Docker image
         tags: sonarqube
-        version: "6.0"
       from:
         kind: DockerImage
-        name: openshiftdemos/sonarqube:6.0
+        name: openshiftdemos/sonarqube:${SONARQUBE_VERSION}
       importPolicy: {}
-      name: "6.0"
+      name: ${SONARQUBE_VERSION}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -802,7 +816,11 @@ objects:
             successThreshold: 1
             timeoutSeconds: 1
           resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
             limits:
+              cpu: 200m
               memory: 256Mi
           securityContext:
             capabilities: {}
@@ -894,6 +912,9 @@ objects:
               path: /
             timeoutSeconds: 5
           resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
             limits:
               cpu: 2
               memory: 2Gi
@@ -911,6 +932,6 @@ objects:
         - sonarqube
         from:
           kind: ImageStreamTag
-          name: sonarqube:6.0
+          name: sonarqube:${SONARQUBE_VERSION}
       type: ImageChange
   status: {}
