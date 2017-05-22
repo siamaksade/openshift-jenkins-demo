@@ -18,7 +18,7 @@ parameters:
   value: password
   name: GOGS_PASSWORD
   required: true
-- description: Username for PostgreSQL backend
+- description: Username for PostgreSQL backend (Gogs Git server and SonarQube)
   displayName: PostgreSQL User
   from: user[A-Z0-9]{3}
   generate: expression
@@ -36,15 +36,22 @@ parameters:
   generate: expression
   name: SONAR_POSTGRESQL_PASSWORD
   required: true
-- description: DEV project name
-  displayName: DEV project name
+- displayName: DEV project name
   value: dev
   name: DEV_PROJECT
   required: true
-- description: STAGE project name
-  displayName: STAGE project name
+- displayName: STAGE project name
   value: stage
   name: STAGE_PROJECT
+  required: true
+- displayName: Gogs version
+  value: 0.9.113
+  name: GOGS_VERSION
+  required: true
+- description: Webhook secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: WEBHOOK_SECRET
   required: true
 objects:
 - apiVersion: v1
@@ -66,6 +73,13 @@ objects:
       name: cicd-pipeline
     name: tasks-pipeline
   spec:
+    triggers:
+      - type: GitHub
+        github:
+          secret: ${WEBHOOK_SECRET}
+      - type: Generic
+        generic:
+          secret: ${WEBHOOK_SECRET}
     runPolicy: Serial
     source:
       type: None
@@ -316,12 +330,11 @@ objects:
     - annotations:
         description: The Gogs git server docker image
         tags: gogs,go,golang
-        version: "latest"
       from:
         kind: DockerImage
-        name: openshiftdemos/gogs:0.11.4
+        name: openshiftdemos/gogs:${GOGS_VERSION}
       importPolicy: {}
-      name: "0.11.4"
+      name: ${GOGS_VERSION}
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -370,6 +383,20 @@ objects:
               port: 3000
               path: /
             timeoutSeconds: 1
+          volumeMounts:
+          - name: gogs-data
+            mountPath: /opt/gogs/data
+          - name: gogs-config
+            mountPath: /etc/gogs/conf
+        volumes:
+          - name: gogs-data
+            emptyDir: {}
+          - name: gogs-config
+            configMap:
+              name: gogs-config
+              items:
+                - key: app.ini
+                  path: app.ini
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         securityContext: {}
@@ -382,7 +409,7 @@ objects:
         - gogs
         from:
           kind: ImageStreamTag
-          name: gogs:0.11.4
+          name: gogs:${GOGS_VERSION}
       type: ImageChange
   status: {}
 - apiVersion: v1
@@ -485,22 +512,41 @@ objects:
       image: docker.io/openshiftdemos/oc
       command: ["/bin/bash",  "/tmp/installgogs.sh"]
       volumeMounts:
-      - name: script-volume
+      - name: gogs-install
         mountPath: /tmp/
       resources:
         limits:
           memory: 128Mi
       env:
-      - name: GOGS_PASSWORD
-        value: ${GOGS_PASSWORD}
+      - name: CICD_PROJECT
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
     volumes:
-      - name: script-volume
+      - name: gogs-install
         configMap:
           name: gogs-install
           items:
           - key: installgogs.sh
             path: installgogs.sh
     restartPolicy: Never
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: gogs-config
+  data:
+    app.ini: |
+      RUN_MODE = prod
+      RUN_USER = gogs
+
+      [security]
+      INSTALL_LOCK = false
+
+      [repository]
+      ROOT = /opt/gogs/data/repositories
+
+      [webhook]
+      SKIP_TLS_VERIFY = true
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -558,8 +604,6 @@ objects:
       # more
       sleep 10
 
-      # RETURN=$(curl -o /dev/null -sL -w "%{http_code}" http://$GOGSSVC:3000/install \
-      # RETURN=$(curl -o /dev/null -sL -v http://$GOGSSVC:3000/install \
       RETURN=$(curl -o /dev/null -sL --post302 -w "%{http_code}" http://$GOGSSVC:3000/install \
       --form db_type=PostgreSQL \
       --form db_host=postgresql-gogs:5432 \
@@ -577,12 +621,13 @@ objects:
       --form app_url=http://${GOGSROUTE}/ \
       --form log_root_path=/opt/gogs/log \
       --form admin_name=gogs \
-      --form admin_passwd=$GOGS_PASSWORD \
-      --form admin_confirm_passwd=$GOGS_PASSWORD \
+      --form admin_passwd=${GOGS_PASSWORD} \
+      --form admin_confirm_passwd=${GOGS_PASSWORD} \
       --form admin_email=admin@gogs.com)
 
       if [ $RETURN != "200" ]
       then
+        echo "ERROR: Failed to initialize Gogs"
         exit 255
       fi
 
@@ -598,10 +643,11 @@ objects:
       EOF
 
       RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
-      -u gogs:$GOGS_PASSWORD -X POST http://$GOGSSVC:3000/api/v1/repos/migrate -d @/tmp/data.json)
+      -u gogs:${GOGS_PASSWORD} -X POST http://$GOGSSVC:3000/api/v1/repos/migrate -d @/tmp/data.json)
 
       if [ $RETURN != "201" ]
       then
+        echo "ERROR: Failed to imported openshift-tasks GitHub repo"
         exit 255
       fi
 
@@ -612,7 +658,7 @@ objects:
       {
         "type": "gogs",
         "config": {
-          "url": "http://admin:$JENKINS_PASSWORD@$JENKINSSVC/job/tasks-cd-pipeline/build?delay=0sec",
+          "url": "https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$CICD_PROJECT/buildconfigs/tasks-pipeline/webhooks/${WEBHOOK_SECRET}/generic",
           "content_type": "json"
         },
         "events": [
@@ -621,11 +667,13 @@ objects:
         "active": true
       }
       EOF
+
       RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
-      -u gogs:$GOGS_PASSWORD -X POST http://$GOGSSVC:3000/api/v1/repos/gogs/openshift-tasks/hooks -d @/tmp/data.json)
+      -u gogs:${GOGS_PASSWORD} -X POST http://$GOGSSVC:3000/api/v1/repos/gogs/openshift-tasks/hooks -d @/tmp/data.json)
 
       if [ $RETURN != "201" ]
       then
+        echo "ERROR: Failed to set webhook"
         exit 255
       fi
 # SonarQube

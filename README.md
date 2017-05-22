@@ -56,9 +56,9 @@ __Note:__ you need ~8GB memory for running this demo.
 
 1. A Jenkins pipeline is pre-configured which clones Tasks application source code from Gogs (running on OpenShift), builds, deploys and promotes the result through the deployment pipeline. In the CI/CD project, click on _Builds_ and then _Pipelines_ to see the list of defined pipelines.
 
-  Click on _tasks-pipeline_ and _Configuration_ and explore the pipeline definition.
+    Click on _tasks-pipeline_ and _Configuration_ and explore the pipeline definition.
 
-  You can also explore the pipeline job in Jenkins by clicking on the Jenkins route url, logging in with the OpenShift credentials and clicking on _tasks-pipeline_ and _Configure_.
+    You can also explore the pipeline job in Jenkins by clicking on the Jenkins route url, logging in with the OpenShift credentials and clicking on _tasks-pipeline_ and _Configure_.
 
 2. Run an instance of the pipeline by starting the _tasks-pipeline_ in OpenShift or Jenkins.
 
