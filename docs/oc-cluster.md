@@ -1,18 +1,22 @@
-# Local OpenShift Origin 1.5
+# Local OpenShift Origin
 
-1. Download and install [Minishift](https://docs.openshift.org/latest/minishift/getting-started/installing.html)
+Download and install [Minishift](https://docs.openshift.org/latest/minishift/getting-started/installing.html)
 
-2. Start up an OpenShift cluster
+Start up an OpenShift cluster:
 
-  ```
-  minishift start --memory=8192 --vm-driver=virtualbox
-  ```
+```
+minishift start --memory=8192 --vm-driver=virtualbox
+minishift addons enable xpaas
+oc login $(minishift ip):8443 -u developer
+```
 
-3. Remove installed imagestreams and install the RHEL and JBoss imagestreams
+Pre-pull the images to make sure the deployments go faster:
 
-  ```
-  oc login [LOCAL-OPENSHIFT-MASTER] -u developer
-  oc delete is --all -n openshift --as=system:admin
-  oc create -f https://raw.githubusercontent.com/openshift/origin/master/examples/image-streams/image-streams-rhel7.json -n openshift --as=system:admin
-  oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift --as=system:admin
-  ```
+```
+minishift ssh docker pull openshiftdemos/nexus:2.13.0-01
+minishift ssh docker pull openshiftdemos/gogs:0.9.113
+minishift ssh docker pull openshiftdemos/sonarqube:6.0
+minishift ssh docker pull openshift/jenkins-2-centos7
+minishift ssh docker pull openshift/jenkins-slave-maven-centos7
+minishift ssh docker pull registry.access.redhat.com/jboss-eap-7/eap70-openshift
+```
