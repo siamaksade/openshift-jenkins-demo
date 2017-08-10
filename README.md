@@ -83,7 +83,7 @@ __Note:__ you need ~8GB memory for running this demo.
 
 10. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
-![](images/jenkins-pipeline.png?raw=true)
+![](images/openshift-pipeline.png?raw=true)
 
 # Troubleshoot
 
