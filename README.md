@@ -1,6 +1,6 @@
-*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.5, origin-1.6, etc*
+*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.6, origin-1.6, etc*
 
-# CI/CD Demo - OpenShift Origin 1.6
+# CI/CD Demo - OpenShift Container Platform 3.6
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus and SonarQube on OpenShift. On every pipeline execution, the code goes through the following steps:
 
@@ -23,7 +23,7 @@ The application used in this pipeline is a JAX-RS application which is available
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 # Setup
-Follow these [instructions](docs/oc-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
+Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
   ```
   oc new-project dev --display-name="Tasks - Dev"
