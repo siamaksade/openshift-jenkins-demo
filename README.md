@@ -40,7 +40,7 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
 Create the CI/CD components based on the provided template
 
   ```
-  oc process -f cicd-template.yaml | oc create -f -
+  oc process -f cicd-template.yaml | oc create -f - -n cicd
   ```
 
 To use custom project names, change `cicd`, `dev` and `stage` in the above commands to

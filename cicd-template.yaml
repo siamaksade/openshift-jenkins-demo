@@ -118,7 +118,6 @@ objects:
              stage ('Deploy DEV') {
                sh "rm -rf oc-build && mkdir -p oc-build/deployments"
                sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
-               sh "oc project ${DEV_PROJECT}"
                // clean up. keep the image stream
                sh "oc delete bc,dc,svc,route -l app=tasks -n ${DEV_PROJECT}"
                // create build. override the exit code since it complains about exising imagestream
@@ -138,7 +137,6 @@ objects:
                def v = version()
                // tag for stage
                sh "oc tag ${DEV_PROJECT}/tasks:latest ${STAGE_PROJECT}/tasks:${v}"
-               sh "oc project ${STAGE_PROJECT}"
                // clean up. keep the imagestream
                sh "oc delete bc,dc,svc,route -l app=tasks -n ${STAGE_PROJECT}"
                // deploy stage image
