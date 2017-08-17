@@ -403,7 +403,7 @@ objects:
             emptyDir: {}
           - name: gogs-config
             configMap:
-              name: gogs-config
+              name: gogs
               items:
                 - key: app.ini
                   path: app.ini
@@ -538,7 +538,7 @@ objects:
     volumes:
       - name: gogs-install
         configMap:
-          name: gogs-install
+          name: gogs
           items:
           - key: installgogs.sh
             path: installgogs.sh
@@ -546,24 +546,7 @@ objects:
 - apiVersion: v1
   kind: ConfigMap
   metadata:
-    name: gogs-config
-  data:
-    app.ini: |
-      RUN_MODE = prod
-      RUN_USER = gogs
-
-      [security]
-      INSTALL_LOCK = false
-
-      [repository]
-      ROOT = /opt/gogs/data/repositories
-
-      [webhook]
-      SKIP_TLS_VERIFY = true
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: gogs-install
+    name: gogs
   data:
     installgogs.sh: |
       #!/bin/bash
@@ -689,6 +672,18 @@ objects:
         echo "ERROR: Failed to set webhook"
         exit 255
       fi
+    app.ini: |
+      RUN_MODE = prod
+      RUN_USER = gogs
+
+      [security]
+      INSTALL_LOCK = false
+
+      [repository]
+      ROOT = /opt/gogs/data/repositories
+
+      [webhook]
+      SKIP_TLS_VERIFY = true
 # SonarQube
 - apiVersion: v1
   kind: Service
