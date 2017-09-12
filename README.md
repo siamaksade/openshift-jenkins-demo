@@ -47,7 +47,7 @@ To use custom project names, change `cicd`, `dev` and `stage` in the above comma
 your own names and use the following to create the demo:
 
   ```
-  oc process -f cicd-template.yaml -v DEV_PROJECT=dev-project-name -v STAGE_PROJECT=stage-project-name | oc create -f - -n cicd-project-name
+  oc process -f cicd-template.yaml --param DEV_PROJECT=dev-project-name --param STAGE_PROJECT=stage-project-name | oc create -f - -n cicd-project-name
   ```
 
 __Note:__ you need ~8GB memory for running this demo.
