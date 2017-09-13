@@ -148,7 +148,6 @@ objects:
             matcher ? matcher[0][1] : null
           }
       type: JenkinsPipeline
-      type: Generic
   status:
     lastVersion: 0
 # Sonatype Nexus
