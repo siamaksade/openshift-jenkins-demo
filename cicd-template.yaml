@@ -167,7 +167,12 @@ objects:
             <resourceRequestMemory>512Mi</resourceRequestMemory>
             <resourceLimitCpu>2</resourceLimitCpu>
             <resourceLimitMemory>2Gi</resourceLimitMemory>
-            <envVars/>
+            <envVars>
+              <org.csanchez.jenkins.plugins.kubernetes.ContainerEnvVar>
+                <key>MAVEN_OPTS</key>
+                <value>-Xms1024m -Xmx2048m</value>
+              </org.csanchez.jenkins.plugins.kubernetes.ContainerEnvVar>
+            </envVars>
           </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
         </containers>
         <envVars/>
