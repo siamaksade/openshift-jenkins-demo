@@ -14,8 +14,8 @@ Pre-pull the images to make sure the deployments go faster:
 
 ```
 minishift ssh docker pull openshiftdemos/nexus:2.13.0-01
-minishift ssh docker pull openshiftdemos/gogs:0.9.113
-minishift ssh docker pull openshiftdemos/sonarqube:6.0
+minishift ssh docker pull openshiftdemos/gogs:0.11.29
+minishift ssh docker pull openshiftdemos/sonarqube:6.5
 minishift ssh docker pull registry.access.redhat.com/openshift3/jenkins-2-rhel7
 minishift ssh docker pull registry.access.redhat.com/openshift3/jenkins-slave-maven-rhel7
 minishift ssh docker pull registry.access.redhat.com/jboss-eap-7/eap70-openshift
