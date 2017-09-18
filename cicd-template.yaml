@@ -43,11 +43,11 @@ parameters:
   name: STAGE_PROJECT
   required: true
 - displayName: Gogs version
-  value: 0.9.113
+  value: 0.11.29
   name: GOGS_VERSION
   required: true
 - displayName: SonarQube version
-  value: "6.0"
+  value: "6.5"
   name: SONARQUBE_VERSION
   required: true
 - description: Webhook secret
