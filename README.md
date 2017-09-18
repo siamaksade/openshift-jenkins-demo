@@ -117,3 +117,10 @@ __Note:__ you need ~8GB memory for running this demo.
   oc login -u system:admin
   oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift
   ```
+
+* If you get this maven error: 
+  ```
+  [Static Analysis] /opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed
+  ``` 
+  during static analysis in the pipeline, just run the pipeline again. This happens when the analysis takes 
+  too long to run which happens on the first run.
