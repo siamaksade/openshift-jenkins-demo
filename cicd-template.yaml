@@ -52,6 +52,8 @@ objects:
 - apiVersion: v1
   kind: BuildConfig
   metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
     labels:
       app: cicd-pipeline
       name: cicd-pipeline
