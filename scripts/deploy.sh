@@ -34,31 +34,15 @@ while :; do
     case $1 in
         deploy)
             ARG_COMMAND=deploy
-            if [ -n "$2" ]; then
-                ARG_DEMO=$2
-                shift
-            fi
             ;;
         delete)
             ARG_COMMAND=delete
-            if [ -n "$2" ]; then
-                ARG_DEMO=$2
-                shift
-            fi
             ;;
         idle)
             ARG_COMMAND=idle
-            if [ -n "$2" ]; then
-                ARG_DEMO=$2
-                shift
-            fi
             ;;
         unidle)
             ARG_COMMAND=unidle
-            if [ -n "$2" ]; then
-                ARG_DEMO=$2
-                shift
-            fi
             ;;
         --user)
             if [ -n "$2" ]; then
