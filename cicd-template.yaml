@@ -132,8 +132,50 @@ objects:
             matcher ? matcher[0][1] : null
           }
       type: JenkinsPipeline
-  status:
-    lastVersion: 0
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    labels:
+      app: cicd-pipeline
+    name: jenkins-slaves
+  data:
+    maven-template: |-
+      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+        <inheritFrom></inheritFrom>
+        <name>maven</name>
+        <privileged>false</privileged>
+        <alwaysPullImage>false</alwaysPullImage>
+        <instanceCap>2147483647</instanceCap>
+        <idleMinutes>0</idleMinutes>
+        <label>maven</label>
+        <serviceAccount>jenkins</serviceAccount>
+        <nodeSelector></nodeSelector>
+        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+          <memory>false</memory>
+        </workspaceVolume>
+        <volumes/>
+        <containers>
+          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+            <name>jnlp</name>
+            <image>registry.access.redhat.com/openshift3/jenkins-slave-maven-rhel7</image>
+            <privileged>false</privileged>
+            <alwaysPullImage>false</alwaysPullImage>
+            <workingDir>/tmp</workingDir>
+            <command></command>
+            <args>${computer.jnlpmac} ${computer.name}</args>
+            <ttyEnabled>false</ttyEnabled>
+            <resourceRequestCpu>1</resourceRequestCpu>
+            <resourceRequestMemory>2Gi</resourceRequestMemory>
+            <resourceLimitCpu>1</resourceLimitCpu>
+            <resourceLimitMemory>2Gi</resourceLimitMemory>
+            <envVars/>
+          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+        </containers>
+        <envVars/>
+        <annotations/>
+        <imagePullSecrets/>
+      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service
