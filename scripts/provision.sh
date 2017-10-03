@@ -118,8 +118,8 @@ function deploy() {
 
   sleep 2
 
-  # local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
-  local template=/Users/ssadeghi/Projects/openshift-cd-demo/cicd-template.yaml
+  local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
+  echo "Using template $template"
   oc process -f $template \
       --param DEV_PROJECT=dev-$PRJ_SUFFIX \
       --param STAGE_PROJECT=stage-$PRJ_SUFFIX \
