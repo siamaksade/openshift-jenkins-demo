@@ -72,7 +72,7 @@ objects:
     strategy:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
-          node('maven') {
+          node('mvn') {
              // define commands
              def mvnCmd = "mvn -s configuration/cicd-settings.xml"
 
@@ -143,12 +143,12 @@ objects:
     maven-template: |-
       <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
         <inheritFrom></inheritFrom>
-        <name>maven</name>
+        <name>mvn</name>
         <privileged>false</privileged>
         <alwaysPullImage>false</alwaysPullImage>
         <instanceCap>2147483647</instanceCap>
         <idleMinutes>0</idleMinutes>
-        <label>maven</label>
+        <label>mvn</label>
         <serviceAccount>jenkins</serviceAccount>
         <nodeSelector></nodeSelector>
         <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
@@ -172,9 +172,9 @@ objects:
             <command></command>
             <args>${computer.jnlpmac} ${computer.name}</args>
             <ttyEnabled>false</ttyEnabled>
-            <resourceRequestCpu></resourceRequestCpu>
+            <resourceRequestCpu>200m</resourceRequestCpu>
             <resourceRequestMemory>1430Mi</resourceRequestMemory>
-            <resourceLimitCpu></resourceLimitCpu>
+            <resourceLimitCpu>1</resourceLimitCpu>
             <resourceLimitMemory>1430Mi</resourceLimitMemory>
             <envVars/>
           </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
