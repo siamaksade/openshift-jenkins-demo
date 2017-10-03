@@ -47,15 +47,25 @@ To use custom project names, change `cicd`, `dev` and `stage` in the above comma
 your own names and use the following to create the demo:
 
   ```
-  oc process -f cicd-template.yaml --param DEV_PROJECT=dev-project-name --param STAGE_PROJECT=stage-project-name | oc create -f - -n cicd-project-name
+  oc process -f cicd-template.yaml \
+      --param DEV_PROJECT=dev-project-name \
+      --param STAGE_PROJECT=stage-project-name \
+      | oc create -f - -n cicd-project-name
   ```
 
+To make sure Jenkins runs smoothly, allow Jenkins to use up to 1Gi memory:
 
-Instead of the above, you can also use the `deploy.sh` script provided which does the exact steps as described above:
   ```
-  ./deploy.sh                   # projects dev, stage, cicd
-  ./deploy.sh [suffix]          # projects dev-suffix, stage-suffix, cicd-suffix
+  oc set resources dc/jenkins --limits=memory=1Gi -n cicd
+  ``` 
+
+Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
   ```
+  ./provision.sh deploy                   
+  ./provision.sh deploy --project-suffix [suffix]
+  ./provision.sh delete --project-suffix [suffix]
+  ```
+
 __Note:__ you need ~8GB memory for running this demo.
 
 # Guide

@@ -137,6 +137,7 @@ objects:
   metadata:
     labels:
       app: cicd-pipeline
+      role: jenkins-slave
     name: jenkins-slaves
   data:
     maven-template: |-
@@ -154,7 +155,13 @@ objects:
         <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
           <memory>false</memory>
         </workspaceVolume>
-        <volumes/>
+        <volumes>
+          <org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
+            <mountPath>/home/jenkins/.m2</mountPath>
+            <claimName>jenkins-maven-slave-pvc</claimName>
+            <readOnly>false</readOnly>
+          </org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
+        </volumes>
         <containers>
           <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
             <name>jnlp</name>
@@ -165,10 +172,10 @@ objects:
             <command></command>
             <args>${computer.jnlpmac} ${computer.name}</args>
             <ttyEnabled>false</ttyEnabled>
-            <resourceRequestCpu>1</resourceRequestCpu>
-            <resourceRequestMemory>2Gi</resourceRequestMemory>
-            <resourceLimitCpu>1</resourceLimitCpu>
-            <resourceLimitMemory>2Gi</resourceLimitMemory>
+            <resourceRequestCpu></resourceRequestCpu>
+            <resourceRequestMemory>1430Mi</resourceRequestMemory>
+            <resourceLimitCpu></resourceLimitCpu>
+            <resourceLimitMemory>1430Mi</resourceLimitMemory>
             <envVars/>
           </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
         </containers>
@@ -176,6 +183,16 @@ objects:
         <annotations/>
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: jenkins-maven-slave-pvc
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 5Gi
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service
@@ -274,7 +291,7 @@ objects:
               cpu: 200m
             limits:
               memory: 2Gi
-              cpu: 1
+              cpu: 500m
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /opt/nexus-work
@@ -385,7 +402,7 @@ objects:
               cpu: 100m
             limits:
               memory: 512Mi
-              cpu: 500m
+              cpu: 200m
           terminationMessagePath: /dev/termination-log
           readinessProbe:
             failureThreshold: 3
@@ -695,10 +712,10 @@ objects:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 500m
+              cpu: 200m
               memory: 1Gi
             limits:
-              cpu: 2
+              cpu: 1
               memory: 2Gi
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
