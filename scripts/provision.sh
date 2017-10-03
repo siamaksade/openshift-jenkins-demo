@@ -118,11 +118,16 @@ function deploy() {
 
   sleep 2
 
-  local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
+  # local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
+  local template=/Users/ssadeghi/Projects/openshift-cd-demo/cicd-template.yaml
   oc process -f $template \
       --param DEV_PROJECT=dev-$PRJ_SUFFIX \
       --param STAGE_PROJECT=stage-$PRJ_SUFFIX \
       -n cicd-$PRJ_SUFFIX | oc create -f - -n cicd-$PRJ_SUFFIX
+
+  sleep 5
+
+  oc set resources dc/jenkins --limits=memory=1Gi -n cicd-$PRJ_SUFFIX
 }
 
 function make_idle() {

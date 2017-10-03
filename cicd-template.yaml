@@ -154,9 +154,6 @@ objects:
             matcher ? matcher[0][1] : null
           }
       type: JenkinsPipeline
-      type: Generic
-  status:
-    lastVersion: 0
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service
@@ -255,7 +252,7 @@ objects:
               cpu: 200m
             limits:
               memory: 2Gi
-              cpu: 1
+              cpu: 500m
           terminationMessagePath: /dev/termination-log
           volumeMounts:
           - mountPath: /opt/nexus-work
@@ -386,7 +383,7 @@ objects:
               cpu: 100m
             limits:
               memory: 512Mi
-              cpu: 500m
+              cpu: 200m
           terminationMessagePath: /dev/termination-log
           readinessProbe:
             failureThreshold: 3
@@ -915,10 +912,10 @@ objects:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 500m
+              cpu: 200m
               memory: 1Gi
             limits:
-              cpu: 2
+              cpu: 1
               memory: 2Gi
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
