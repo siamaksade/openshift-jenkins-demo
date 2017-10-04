@@ -5,7 +5,7 @@ Download and install [Container Development Kit (CDK) 3.0](https://developers.re
 Start up an OpenShift cluster:
 
 ```
-minishift start --memory=8192 --vm-driver=virtualbox
+minishift start --memory=10240 --vm-driver=virtualbox
 minishift addons enable xpaas
 oc login $(minishift ip):8443 -u developer
 ```

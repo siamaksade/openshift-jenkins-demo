@@ -19,7 +19,7 @@ The application used in this pipeline is a JAX-RS application which is available
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
 # Prerequisites
-* 8+ GB memory available on OpenShift nodes
+* 10+ GB memory available on OpenShift nodes
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 # Setup
@@ -65,8 +65,6 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
   ./provision.sh deploy --project-suffix [suffix]
   ./provision.sh delete --project-suffix [suffix]
   ```
-
-__Note:__ you need ~8GB memory for running this demo.
 
 # Guide
 
