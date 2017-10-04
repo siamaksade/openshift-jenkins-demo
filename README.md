@@ -56,7 +56,7 @@ your own names and use the following to create the demo:
 To make sure Jenkins runs smoothly, allow Jenkins to use up to 1Gi memory:
 
   ```
-  oc set resources dc/jenkins --limits=memory=1Gi -n cicd
+  oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi -n cicd
   ``` 
 
 Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:

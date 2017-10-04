@@ -127,7 +127,7 @@ function deploy() {
 
   sleep 5
 
-  oc set resources dc/jenkins --limits=memory=1Gi -n cicd-$PRJ_SUFFIX
+  oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi -n cicd-$PRJ_SUFFIX
 }
 
 function make_idle() {
