@@ -127,7 +127,8 @@ function deploy() {
 
   sleep 5
 
-  oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi -n cicd-$PRJ_SUFFIX
+  oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
+  oc set env dc/jenkins INSTALL_PLUGINS=openshift-pipeline:1.0.52,openshift-sync:0.1.31 -n cicd-$PRJ_SUFFIX
 }
 
 function make_idle() {
