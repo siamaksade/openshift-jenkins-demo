@@ -84,10 +84,9 @@ __Note:__ you need ~8GB memory for running this demo.
 
 5. After pipeline completion, demonstrate the following:
   * Explore the _snapshots_ repository in Nexus and verify _openshift-tasks_ is pushed to the repository
-  * Explore SonarQube and verify a project is created with metrics, stats, code coverage, etc
+  * Explore SonarQube or pipeline in Jenkins and show the metrics, stats, code coverage, etc
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
   * Explore _Tasks - Stage_ project in OpenShift console and verify the application is deployed in the STAGE environment  
-
 
 6. Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
 
