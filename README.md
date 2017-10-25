@@ -22,7 +22,11 @@ The application used in this pipeline is a JAX-RS application which is available
 * 10+ GB memory available on OpenShift nodes
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
-# Setup
+# Setup on RHPDS
+
+If you have access to RHPDS, provisioning of this demo is automated via the service catalog under **OpenShift Demos &rarr; OpenShift CI/CD for Monolith**. If you don't know what RHPDS is, read the instructions in the next section.
+
+# Setup on OpenShift
 Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
   ```
