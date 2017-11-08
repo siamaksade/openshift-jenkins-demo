@@ -87,7 +87,7 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
 
 5. After pipeline completion, demonstrate the following:
   * Explore the _snapshots_ repository in Nexus and verify _openshift-tasks_ is pushed to the repository
-  * Explore SonarQube and verify a project is created with metrics, stats, code coverage, etc
+  * Explore SonarQube or pipeline in Jenkins and show the metrics, stats, code coverage, etc
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
   * Explore _Tasks - Stage_ project in OpenShift console and verify the application is deployed in the STAGE environment  
 

@@ -442,7 +442,7 @@ objects:
           - name: gogs-config
             mountPath: /etc/gogs/conf
           - name: gogs-custom-config
-            mountPath: /etc/gogs/conf
+            mountPath: /opt/gogs/custom/conf
         volumes:
           - name: gogs-data
             persistentVolumeClaim:
@@ -724,7 +724,7 @@ objects:
       --form admin_confirm_passwd=${GOGS_PASSWORD} \
       --form admin_email=admin@gogs.com)
 
-      if [ $RETURN != "200" ]
+      if [ $RETURN != "200" ] && [ $RETURN != "302" ]
       then
         echo "ERROR: Failed to initialize Gogs"
         exit 255
