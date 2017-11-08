@@ -28,10 +28,6 @@ parameters:
   value: 0.11.29
   name: GOGS_VERSION
   required: true
-- displayName: SonarQube version
-  value: "6.5"
-  name: SONARQUBE_VERSION
-  required: true
 - description: Webhook secret
   from: '[a-zA-Z0-9]{8}'
   generate: expression
