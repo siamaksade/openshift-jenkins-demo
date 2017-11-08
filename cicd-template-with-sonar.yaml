@@ -18,12 +18,6 @@ parameters:
   value: password
   name: GOGS_PASSWORD
   required: true
-- description: Username for PostgreSQL backend (Gogs Git server and SonarQube)
-  displayName: PostgreSQL User
-  from: user[A-Z0-9]{3}
-  generate: expression
-  name: POSTGRESQL_USER
-  required: true
 - description: Password for Gogs Git Server PostgreSQL backend
   displayName: Gogs' PostgreSQL Password
   from: '[a-zA-Z0-9]{16}'
@@ -45,7 +39,7 @@ parameters:
   name: STAGE_PROJECT
   required: true
 - displayName: Gogs version
-  value: 0.9.113
+  value: 0.11.29
   name: GOGS_VERSION
   required: true
 - displayName: SonarQube version
@@ -444,10 +438,16 @@ objects:
             mountPath: /opt/gogs/data
           - name: gogs-config
             mountPath: /etc/gogs/conf
+          - name: gogs-custom-config
+            mountPath: /etc/gogs/conf
         volumes:
           - name: gogs-data
-            emptyDir: {}
+            persistentVolumeClaim:
+              claimName: gogs-data
           - name: gogs-config
+            persistentVolumeClaim:
+              claimName: gogs-config
+          - name: gogs-custom-config
             configMap:
               name: gogs-config
               items:
@@ -494,7 +494,7 @@ objects:
         containers:
         - env:
           - name: POSTGRESQL_USER
-            value: ${POSTGRESQL_USER}
+            value: gogs
           - name: POSTGRESQL_PASSWORD
             value: ${GOGS_POSTGRESQL_PASSWORD}
           - name: POSTGRESQL_DATABASE
@@ -544,8 +544,9 @@ objects:
         securityContext: {}
         terminationGracePeriodSeconds: 30
         volumes:
-        - emptyDir: {}
-          name: postgresql-data
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: postgresql-gogs-data
     triggers:
     - imageChangeParams:
         automatic: true
@@ -558,6 +559,42 @@ objects:
       type: ImageChange
     - type: ConfigChange
   status: {}
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: gogs-data
+    labels:
+      app: gogs
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: gogs-config
+    labels:
+      app: gogs
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: postgresql-gogs-data
+    labels:
+      app: gogs
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
 - apiVersion: v1
   kind: Pod
   metadata:
@@ -666,13 +703,13 @@ objects:
       RETURN=$(curl -o /dev/null -sL --post302 -w "%{http_code}" http://$GOGSSVC:3000/install \
       --form db_type=PostgreSQL \
       --form db_host=postgresql-gogs:5432 \
-      --form db_user=$POSTGRESQL_USER \
+      --form db_user=gogs \
       --form db_passwd=$POSTGRESQL_PASSWORD \
       --form db_name=gogs \
       --form ssl_mode=disable \
       --form db_path=data/gogs.db \
       --form "app_name=Gogs: Go Git Service" \
-      --form repo_root_path=/home/gogs/gogs-repositories \
+      --form repo_root_path=/opt/gogs/data/repositories \
       --form run_user=gogs \
       --form domain=localhost \
       --form ssh_port=22 \
@@ -828,7 +865,7 @@ objects:
         containers:
         - env:
           - name: POSTGRESQL_USER
-            value: ${POSTGRESQL_USER}
+            value: sonar
           - name: POSTGRESQL_PASSWORD
             value: ${SONAR_POSTGRESQL_PASSWORD}
           - name: POSTGRESQL_DATABASE
@@ -930,7 +967,7 @@ objects:
           - name: SONARQUBE_JDBC_URL
             value: jdbc:postgresql://postgresql-sonarqube/sonar
           - name: SONARQUBE_JDBC_USERNAME
-            value: ${POSTGRESQL_USER}
+            value: sonar
           image: ' '
           imagePullPolicy: IfNotPresent
           name: sonarqube
