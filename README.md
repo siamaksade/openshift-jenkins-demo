@@ -19,7 +19,7 @@ The application used in this pipeline is a JAX-RS application which is available
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
 # Prerequisites
-* 10+ GB memory available on OpenShift nodes
+* 8+ GB memory available on OpenShift nodes
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 # Setup on RHPDS
