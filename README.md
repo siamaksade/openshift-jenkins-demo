@@ -19,51 +19,38 @@ The application used in this pipeline is a JAX-RS application which is available
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
 # Prerequisites
-* 10+ GB memory available on OpenShift nodes
+* 8+ GB memory available on OpenShift nodes
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 # Setup on RHPDS
 
 If you have access to RHPDS, provisioning of this demo is automated via the service catalog under **OpenShift Demos &rarr; OpenShift CI/CD for Monolith**. If you don't know what RHPDS is, read the instructions in the next section.
 
-# Setup on OpenShift
+# Setup on OpenShift (Manual)
 Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
-  ```
+  ```shell
+  # Create Projects
   oc new-project dev --display-name="Tasks - Dev"
   oc new-project stage --display-name="Tasks - Stage"
   oc new-project cicd --display-name="CI/CD"
-  ```
 
-Jenkins needs to access OpenShift API to discover slave images as well accessing container images. Grant Jenkins service account enough privileges to invoke OpenShift API for the created projects:
-
-  ```
+  # Grant Jenkins Access to Projects
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
-  ```
-Create the CI/CD components based on the provided template
 
-  ```
-  oc process -f cicd-template.yaml | oc create -f - -n cicd
+  # Deploy Pipeline
+  oc new-app -n cicd -f cicd-template.yaml
   ```
 
 To use custom project names, change `cicd`, `dev` and `stage` in the above commands to
 your own names and use the following to create the demo:
 
-  ```
-  oc process -f cicd-template.yaml \
-      --param DEV_PROJECT=dev-project-name \
-      --param STAGE_PROJECT=stage-project-name \
-      | oc create -f - -n cicd-project-name
+  ```shell
+  oc new-app -n cicd -f cicd-template.yaml --param DEV_PROJECT=dev-project-name --param STAGE_PROJECT=stage-project-name
   ```
 
-To make sure Jenkins runs smoothly, allow Jenkins to use up to 1Gi memory:
-
-  ```
-  oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi -n cicd
-  oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd
-  ``` 
-
+# Setup on OpenShift (Script)
 Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
   ```
   ./provision.sh deploy                   
@@ -113,23 +100,6 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
 
   Scale down the SonarQube pod and its PostgreSQL database to 0 and then scale them up to 1 again (first PostgreSQL, then SonarQube) to re-initialize SonarQube.
 
-* Downloading the images might take a while depending on the network. Remove the _install-gogs_ pod and re-create the app to retry Gogs initialization.
-
-  ```
-  $ oc delete pod install-gogs
-  $ oc delete pods -l app=gogs
-  $ oc process -f cicd-template.yaml | oc create -f -
-
-  pod "install-gogs" created
-  Error from server: routes "jenkins" already exists
-  Error from server: deploymentconfigs "jenkins" already exists
-  Error from server: serviceaccounts "jenkins" already exists
-  Error from server: rolebinding "jenkins_edit" already exists
-  ...
-  ```
-
-* If the cicd-pipeline Jenkins job has disappeared, scale Jenkins pod to 0 and up to 1 again to force a job sync with OpenShift pipelines.
-
 * If pipeline execution fails with ```error: no match for "jboss-eap70-openshift"```, import the jboss imagestreams in OpenShift.
 
   ```
@@ -137,9 +107,7 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
   oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift
   ```
 
-* If you get this maven error: 
+* If you get this maven error during the static analysis, you are running out of memory and need more memory for OpenShift: 
   ```
   [Static Analysis] /opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed
   ``` 
-  during static analysis in the pipeline, just run the pipeline again. This happens when the analysis takes 
-  too long to run which happens on the first run.

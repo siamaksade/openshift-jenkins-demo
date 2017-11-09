@@ -5,17 +5,11 @@ labels:
   group: cicd
 metadata:
   annotations:
-    description: Creates the CI/CD infrastructure with Jenkins, Gogs, Nexus and SonarQube
     iconClass: icon-jenkins
     tags: instant-app,jenkins,gogs,nexus,cicd
   name: cicd
-message: The CI/CD infrastructure composed of Jenkins, Gogs, Nexus Repository and SonarQube services has been created in your project.  Jenkins username/password are admin/${JENKINS_PASSWORD} and Gogs username/password are gogs/${GOGS_PASSWORD}.
+message: "Use the following credentials for login:\nJenkins: use your OpenShift credentials\nNexus: admin/admin123\nSonarQube: admin/admin\nGogs Git Server: gogs/gogs"
 parameters:
-- description: Password for the Gogs user.
-  displayName: Gogs Password
-  value: password
-  name: GOGS_PASSWORD
-  required: true
 - displayName: DEV project name
   value: dev
   name: DEV_PROJECT
@@ -23,16 +17,6 @@ parameters:
 - displayName: STAGE project name
   value: stage
   name: STAGE_PROJECT
-  required: true
-- displayName: Gogs version
-  value: "0.11.29"
-  name: GOGS_VERSION
-  required: true
-- description: Password for Gogs Git Server PostgreSQL backend
-  displayName: Gogs' PostgreSQL Password
-  from: '[a-zA-Z0-9]{16}'
-  generate: expression
-  name: GOGS_POSTGRESQL_PASSWORD
   required: true
 - description: Webhook secret
   from: '[a-zA-Z0-9]{8}'
@@ -44,9 +28,9 @@ objects:
   groupNames: null
   kind: RoleBinding
   metadata:
-    name: default_edit
+    name: default_admin
   roleRef:
-    name: edit
+    name: admin
   subjects:
   - kind: ServiceAccount
     name: default
@@ -55,7 +39,6 @@ objects:
   kind: BuildConfig
   metadata:
     annotations:
-      pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
     labels:
       app: cicd-pipeline
       name: cicd-pipeline
@@ -73,10 +56,15 @@ objects:
       type: None
     strategy:
       jenkinsPipelineStrategy:
+        env:
+        - name: "DEV_PROJECT"
+          value: ${DEV_PROJECT}
+        - name: "STAGE_PROJECT"
+          value: ${STAGE_PROJECT}
         jenkinsfile: |-
-          node('mvn') {
+          node('maven') {
              // define commands
-             def mvnCmd = "mvn -s configuration/cicd-settings.xml"
+             def mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
 
              stage ('Build') {
                git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
@@ -148,12 +136,12 @@ objects:
     maven-template: |-
       <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
         <inheritFrom></inheritFrom>
-        <name>mvn</name>
+        <name>maven</name>
         <privileged>false</privileged>
         <alwaysPullImage>false</alwaysPullImage>
         <instanceCap>2147483647</instanceCap>
         <idleMinutes>0</idleMinutes>
-        <label>mvn</label>
+        <label>maven</label>
         <serviceAccount>jenkins</serviceAccount>
         <nodeSelector></nodeSelector>
         <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
@@ -178,8 +166,8 @@ objects:
             <args>${computer.jnlpmac} ${computer.name}</args>
             <ttyEnabled>false</ttyEnabled>
             <resourceRequestCpu>200m</resourceRequestCpu>
-            <resourceRequestMemory>1Gi</resourceRequestMemory>
-            <resourceLimitCpu>1</resourceLimitCpu>
+            <resourceRequestMemory>512Mi</resourceRequestMemory>
+            <resourceLimitCpu>2</resourceLimitCpu>
             <resourceLimitMemory>4Gi</resourceLimitMemory>
             <envVars/>
           </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
@@ -198,580 +186,136 @@ objects:
     resources:
       requests:
         storage: 4Gi
-# Sonatype Nexus
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      description: Sonatype Nexus repository manager's http port
-    labels:
-      app: nexus
-    name: nexus
-  spec:
-    ports:
-    - name: web
-      port: 8081
-      protocol: TCP
-      targetPort: 8081
-    selector:
-      app: nexus
-      deploymentconfig: nexus
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Route
+# Setup Demo
+- apiVersion: batch/v1
+  kind: Job
   metadata:
     labels:
-      app: nexus
-    name: nexus
+      job-name: cicd-demo-setup
+    name: cicd-demo-setup
   spec:
-    port:
-      targetPort: web
-    to:
-      kind: Service
-      name: nexus
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      app: nexus
-    name: nexus
-  spec:
-    tags:
-    - annotations:
-        description: The Nexus Docker image
-        tags: nexus
-      from:
-        kind: DockerImage
-        name: openshiftdemos/nexus:2.13.0-01
-      importPolicy: {}
-      name: "2.13.0-01"
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    labels:
-      app: nexus
-    name: nexus
-  spec:
-    replicas: 1
-    selector:
-      app: nexus
-      deploymentconfig: nexus
-    strategy:
-      type: Recreate
+    activeDeadlineSeconds: 400
+    completions: 1
+    parallelism: 1
     template:
       metadata:
         labels:
-          app: nexus
-          deploymentconfig: nexus
+          job-name: cicd-demo-setup
       spec:
         containers:
-        - image: ' '
-          imagePullPolicy: Always
-          name: nexus
-          ports:
-          - containerPort: 8081
-            protocol: TCP
-          livenessProbe:
-            failureThreshold: 5
-            initialDelaySeconds: 60
-            periodSeconds: 10
-            successThreshold: 1
-            httpGet:
-              port: 8081
-              path: /content/groups/public
-            timeoutSeconds: 5
-          readinessProbe:
-            failureThreshold: 5
-            initialDelaySeconds: 60
-            periodSeconds: 10
-            successThreshold: 1
-            httpGet:
-              port: 8081
-              path: /content/groups/public
-            timeoutSeconds: 5
-          resources:
-            requests:
-              memory: 512Mi
-              cpu: 200m
-            limits:
-              memory: 2Gi
-              cpu: 500m
+        - command:
+          - /bin/bash
+          - -x
+          - -c
+          - |
+            function wait_while_empty() {
+              local _NAME=$1
+              local _TIMEOUT=$(($2/5))
+              local _CONDITION=$3
+
+              echo "Waiting for $_NAME to be ready..."
+              local x=1
+              while [ -z "$(eval ${_CONDITION})" ]
+              do
+                echo "."
+                sleep 5
+                x=$(( $x + 1 ))
+                if [ $x -gt $_TIMEOUT ]
+                then
+                  echo "$_NAME still not ready, I GIVE UP!"
+                  exit 255
+                fi
+              done
+
+              echo "$_NAME is ready."
+            }
+
+            oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template 
+            oc new-app -f http://bit.ly/openshift-nexus3-template 
+
+            HOSTNAME=$(oc get route nexus -o template --template='{{.spec.host}}' | sed "s/nexus-${CICD_NAMESPACE}.//g")
+            GOGS_HOSTNAME="gogs-$CICD_NAMESPACE.$HOSTNAME"
+
+            oc new-app -f http://bit.ly/openshift-gogs-persistent-template --param=GOGS_VERSION=0.11.29 --param=HOSTNAME=$GOGS_HOSTNAME
+
+            sleep 5
+
+            oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
+            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52
+            oc label dc jenkins app=jenkins --overwrite
+
+            wait_while_empty "Gogs PostgreSQL" 600 "oc get ep gogs-postgresql -o yaml | grep 'addresses:'"
+            wait_while_empty "Gogs" 600 "oc get ep gogs -o yaml | grep 'addresses:'"
+
+            GOGS_SVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
+            GOGS_USER=gogs
+            GOGS_PWD=gogs
+
+            _RETURN=$(curl -o /tmp/curl.log -sL --post302 -w "%{http_code}" http://$GOGS_SVC:3000/user/sign_up \
+              --form user_name=$GOGS_USER \
+              --form password=$GOGS_PWD \
+              --form retype=$GOGS_PWD \
+              --form email=admin@gogs.com)
+            sleep 5
+
+            if [ $_RETURN != "200" ] && [ $_RETURN != "302" ] ; then
+              echo "ERROR: Failed to create Gogs admin"
+              cat /tmp/curl.log
+              exit 255
+            fi
+
+            sleep 10
+
+            cat <<EOF > /tmp/data.json
+            {
+              "clone_addr": "https://github.com/OpenShiftDemos/openshift-tasks.git",
+              "uid": 1,
+              "repo_name": "openshift-tasks"
+            }
+            EOF
+
+            _RETURN=$(curl -o /tmp/curl.log -sL -w "%{http_code}" -H "Content-Type: application/json" \
+            -u $GOGS_USER:$GOGS_PWD -X POST http://$GOGS_SVC:3000/api/v1/repos/migrate -d @/tmp/data.json)
+
+            if [ $_RETURN != "201" ] ;then
+              echo "ERROR: Failed to imported openshift-tasks GitHub repo"
+              cat /tmp/curl.log
+              exit 255
+            fi
+
+            sleep 5
+
+            cat <<EOF > /tmp/data.json
+            {
+              "type": "gogs",
+              "config": {
+                "url": "https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$CICD_NAMESPACE/buildconfigs/tasks-pipeline/webhooks/${WEBHOOK_SECRET}/generic",
+                "content_type": "json"
+              },
+              "events": [
+                "push"
+              ],
+              "active": true
+            }
+            EOF
+
+            _RETURN=$(curl -o /tmp/curl.log -sL -w "%{http_code}" -H "Content-Type: application/json" \
+            -u $GOGS_USER:$GOGS_PWD -X POST http://$GOGS_SVC:3000/api/v1/repos/gogs/openshift-tasks/hooks -d @/tmp/data.json)
+
+            if [ $_RETURN != "201" ] ; then
+              echo "ERROR: Failed to set webhook"
+              cat /tmp/curl.log
+              exit 255
+            fi
+
+          env:
+            - name: CICD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: openshift/origin:latest
+          name: cicd-demo-setup-job
+          resources: {}
           terminationMessagePath: /dev/termination-log
-          volumeMounts:
-          - mountPath: /opt/nexus-work
-            name: nexus-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        terminationGracePeriodSeconds: 30
-        volumes:
-        - emptyDir: {}
-          name: nexus-data
-    triggers:
-    - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - nexus
-        from:
-          kind: ImageStreamTag
-          name: nexus:2.13.0-01
-      type: ImageChange
-  status: {}
-# Gogs
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      description: The Gogs server's http port
-    labels:
-      app: gogs
-    name: gogs
-  spec:
-    ports:
-    - name: web
-      port: 3000
-      protocol: TCP
-      targetPort: 3000
-    selector:
-      app: gogs
-      deploymentconfig: gogs
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Service
-  metadata:
-    creationTimestamp: null
-    name: postgresql-gogs
-    labels:
-      app: gogs
-  spec:
-    ports:
-    - name: postgresql
-      port: 5432
-      protocol: TCP
-      targetPort: 5432
-    selector:
-      app: gogs
-      deploymentconfig: postgresql-gogs
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Route
-  metadata:
-    annotations:
-      description: Route for gogs's http service.
-    name: gogs
-    labels:
-      app: gogs
-  spec:
-    to:
-      kind: Service
-      name: gogs
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    name: gogs
-    labels:
-      app: gogs
-  spec:
-    tags:
-    - annotations:
-        description: The Gogs git server docker image
-        tags: gogs,go,golang
-      from:
-        kind: DockerImage
-        name: openshiftdemos/gogs:${GOGS_VERSION}
-      importPolicy: {}
-      name: ${GOGS_VERSION}
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    labels:
-      app: gogs
-    name: gogs
-  spec:
-    replicas: 1
-    selector:
-      app: gogs
-      deploymentconfig: gogs
-    strategy:
-      type: Recreate
-    template:
-      metadata:
-        labels:
-          app: gogs
-          deploymentconfig: gogs
-      spec:
-        containers:
-        - image: " "
-          imagePullPolicy: Always
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            successThreshold: 1
-            httpGet:
-              port: 3000
-              path: /
-            timeoutSeconds: 1
-          name: gogs
-          ports:
-          - containerPort: 3000
-            protocol: TCP
-          resources:
-            requests:
-              memory: 256Mi
-              cpu: 100m
-            limits:
-              memory: 512Mi
-              cpu: 200m
-          terminationMessagePath: /dev/termination-log
-          readinessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            successThreshold: 1
-            httpGet:
-              port: 3000
-              path: /
-            timeoutSeconds: 1
-          volumeMounts:
-          - name: gogs-data
-            mountPath: /opt/gogs/data
-          - name: gogs-config
-            mountPath: /etc/gogs/conf
-          - name: gogs-custom-config
-            mountPath: /opt/gogs/custom/conf
-        volumes:
-          - name: gogs-data
-            persistentVolumeClaim:
-              claimName: gogs-data
-          - name: gogs-config
-            persistentVolumeClaim:
-              claimName: gogs-config
-          - name: gogs-custom-config
-            configMap:
-              name: gogs-config
-              items:
-                - key: app.ini
-                  path: app.ini
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
-    triggers:
-    - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - gogs
-        from:
-          kind: ImageStreamTag
-          name: gogs:${GOGS_VERSION}
-      type: ImageChange
-  status: {}
-- apiVersion: v1
-  kind: DeploymentConfig
-  metadata:
-    creationTimestamp: null
-    labels:
-      app: gogs
-      deploymentconfig: postgresql-gogs
-    name: postgresql-gogs
-  spec:
-    replicas: 1
-    selector:
-      app: gogs
-      deploymentconfig: postgresql-gogs
-    strategy:
-      recreateParams:
-        timeoutSeconds: 600
-      type: Recreate
-    template:
-      metadata:
-        labels:
-          app: gogs
-          deploymentconfig: postgresql-gogs
-      spec:
-        containers:
-        - env:
-          - name: POSTGRESQL_USER
-            value: gogs
-          - name: POSTGRESQL_PASSWORD
-            value: ${GOGS_POSTGRESQL_PASSWORD}
-          - name: POSTGRESQL_DATABASE
-            value: gogs
-          image: ' '
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            tcpSocket:
-              port: 5432
-            timeoutSeconds: 1
-          name: postgresql
-          ports:
-          - containerPort: 5432
-            protocol: TCP
-          readinessProbe:
-            exec:
-              command:
-              - /bin/sh
-              - -i
-              - -c
-              - psql -h 127.0.0.1 -U $POSTGRESQL_USER -q -d $POSTGRESQL_DATABASE -c 'SELECT 1'
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 200m
-              memory: 256Mi
-          securityContext:
-            capabilities: {}
-            privileged: false
-          terminationMessagePath: /dev/termination-log
-          volumeMounts:
-          - mountPath: /var/lib/pgsql/data
-            name: postgresql-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        securityContext: {}
-        terminationGracePeriodSeconds: 30
-        volumes:
-        - name: postgresql-data
-          persistentVolumeClaim:
-            claimName: postgresql-gogs-data
-    triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - postgresql
-        from:
-          kind: ImageStreamTag
-          name: postgresql:9.5
-          namespace: openshift
-      type: ImageChange
-    - type: ConfigChange
-  status: {}
-- kind: PersistentVolumeClaim
-  apiVersion: v1
-  metadata:
-    name: gogs-data
-    labels:
-      app: gogs
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 1Gi
-- kind: PersistentVolumeClaim
-  apiVersion: v1
-  metadata:
-    name: gogs-config
-    labels:
-      app: gogs
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 1Gi
-- kind: PersistentVolumeClaim
-  apiVersion: v1
-  metadata:
-    name: postgresql-gogs-data
-    labels:
-      app: gogs
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 1Gi
-- apiVersion: v1
-  kind: Pod
-  metadata:
-    name: install-gogs
-    labels:
-      app: gogs
-      job: install-gogs
-  spec:
-    containers:
-    - name: oc
-      image: docker.io/openshiftdemos/oc
-      command: ["/bin/bash",  "/tmp/installgogs.sh"]
-      volumeMounts:
-      - name: gogs-install
-        mountPath: /tmp/
-      resources:
-        limits:
-          memory: 128Mi
-      env:
-      - name: CICD_PROJECT
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.namespace
-    volumes:
-      - name: gogs-install
-        configMap:
-          name: gogs-install
-          items:
-          - key: installgogs.sh
-            path: installgogs.sh
-    restartPolicy: Never
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: gogs-config
-  data:
-    app.ini: |
-      RUN_MODE = prod
-      RUN_USER = gogs
-
-      [security]
-      INSTALL_LOCK = false
-
-      [repository]
-      ROOT = /opt/gogs/data/repositories
-
-      [webhook]
-      SKIP_TLS_VERIFY = true
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: gogs-install
-  data:
-    installgogs.sh: |
-      #!/bin/bash
-
-      set -x
-
-      # Use the oc client to get the url for the gogs and jenkins route and service
-      GOGSSVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
-      GOGSROUTE=$(oc get route gogs -o template --template='{{.spec.host}}')
-      JENKINSSVC=$(oc get svc jenkins -o template --template='{{.spec.clusterIP}}')
-
-      # Use the oc client to get the postgres and jenkins variables into the current shell
-      eval $(oc env dc/postgresql-gogs --list | grep -v \#)
-      eval $(oc env dc/jenkins --list | grep -v \#)
-
-      # postgres has a readiness probe, so checking if there is at least one
-      # endpoint means postgres is alive and ready, so we can then attempt to install gogs
-      # we're willing to wait 60 seconds for it, otherwise something is wrong.
-      x=1
-      oc get ep postgresql-gogs -o yaml | grep "\- addresses:"
-      while [ ! $? -eq 0 ]
-      do
-        sleep 10
-        x=$(( $x + 1 ))
-
-        if [ $x -gt 100 ]
-        then
-          exit 255
-        fi
-
-        oc get ep postgresql-gogs -o yaml | grep "\- addresses:"
-      done
-
-      # now we wait for gogs to be ready in the same way
-      x=1
-      oc get ep gogs -o yaml | grep "\- addresses:"
-      while [ ! $? -eq 0 ]
-      do
-        sleep 10
-        x=$(( $x + 1 ))
-
-        if [ $x -gt 100 ]
-        then
-          exit 255
-        fi
-
-        oc get ep gogs -o yaml | grep "\- addresses:"
-      done
-
-      # we might catch the router before it's been updated, so wait just a touch
-      # more
-      sleep 10
-
-      RETURN=$(curl -o /dev/null -sL --post302 -w "%{http_code}" http://$GOGSSVC:3000/install \
-      --form db_type=PostgreSQL \
-      --form db_host=postgresql-gogs:5432 \
-      --form db_user=gogs \
-      --form db_passwd=$POSTGRESQL_PASSWORD \
-      --form db_name=gogs \
-      --form ssl_mode=disable \
-      --form db_path=data/gogs.db \
-      --form "app_name=Gogs: Go Git Service" \
-      --form repo_root_path=/opt/gogs/data/repositories \
-      --form run_user=gogs \
-      --form domain=localhost \
-      --form ssh_port=22 \
-      --form http_port=3000 \
-      --form app_url=http://${GOGSROUTE}/ \
-      --form log_root_path=/opt/gogs/log \
-      --form admin_name=gogs \
-      --form admin_passwd=${GOGS_PASSWORD} \
-      --form admin_confirm_passwd=${GOGS_PASSWORD} \
-      --form admin_email=admin@gogs.com)
-
-      if [ $RETURN != "200" ] && [ $RETURN != "302" ]
-      then
-        echo "ERROR: Failed to initialize Gogs"
-        exit 255
-      fi
-
-      sleep 10
-
-      # import github repository
-      cat <<EOF > /tmp/data.json
-      {
-        "clone_addr": "https://github.com/OpenShiftDemos/openshift-tasks.git",
-        "uid": 1,
-        "repo_name": "openshift-tasks"
-      }
-      EOF
-
-      RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
-      -u gogs:${GOGS_PASSWORD} -X POST http://$GOGSSVC:3000/api/v1/repos/migrate -d @/tmp/data.json)
-
-      if [ $RETURN != "201" ]
-      then
-        echo "ERROR: Failed to imported openshift-tasks GitHub repo"
-        exit 255
-      fi
-
-      sleep 5
-
-      # add webhook to Gogs to trigger pipeline on push
-      cat <<EOF > /tmp/data.json
-      {
-        "type": "gogs",
-        "config": {
-          "url": "https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$CICD_PROJECT/buildconfigs/tasks-pipeline/webhooks/${WEBHOOK_SECRET}/generic",
-          "content_type": "json"
-        },
-        "events": [
-          "push"
-        ],
-        "active": true
-      }
-      EOF
-
-      RETURN=$(curl -o /dev/null -sL -w "%{http_code}" -H "Content-Type: application/json" \
-      -u gogs:${GOGS_PASSWORD} -X POST http://$GOGSSVC:3000/api/v1/repos/gogs/openshift-tasks/hooks -d @/tmp/data.json)
-
-      if [ $RETURN != "201" ]
-      then
-        echo "ERROR: Failed to set webhook"
-        exit 255
-      fi
+          terminationMessagePolicy: File
+        restartPolicy: Never
