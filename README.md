@@ -61,7 +61,7 @@ To make sure Jenkins runs smoothly, allow Jenkins to use up to 1Gi memory:
 
   ```
   oc set resources dc/jenkins --limits=memory=1Gi -n cicd
-  oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd
+  oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true -n cicd
   ``` 
 
 Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
