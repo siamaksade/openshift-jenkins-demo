@@ -18,6 +18,11 @@ parameters:
   value: stage
   name: STAGE_PROJECT
   required: true
+- displayName: Deploy SonarQube
+  description: If SonarQube should be deployed and used in the pipeline. Set to false to preserve resources.
+  value: true
+  name: WITH_SONAR
+  required: true
 - description: Webhook secret
   from: '[a-zA-Z0-9]{8}'
   generate: expression
@@ -39,6 +44,7 @@ objects:
   kind: BuildConfig
   metadata:
     annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
     labels:
       app: cicd-pipeline
       name: cicd-pipeline
@@ -62,64 +68,93 @@ objects:
         - name: STAGE_PROJECT
           value: ${STAGE_PROJECT}
         jenkinsfile: |-
-          node('maven') {
-             // define commands
-             def mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
-             def dev = env.DEV_PROJECT
-             def stage = env.STAGE_PROJECT
+          def mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
 
-             stage ('Build') {
-               git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
-               sh "${mvnCmd} clean install -DskipTests=true"
-             }
+          openshift.withCluster() {
+            pipeline {
+              agent {
+                node {
+                  label 'maven'
+                }
+              }
+              stages {
+                stage('Build') {
+                  steps {
+                    git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
+                    sh "${mvnCmd} clean install -DskipTests=true"                  
+                  }
+                }
+                stage('Test') {
+                  steps {
+                    sh "${mvnCmd} test"
+                    step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+                  }
+                }
+                stage('Security Analysis') {
+                  steps {
+                    if (${WITH_SONAR}) {
+                      sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
+                    } else {
+                      sh "${mvnCmd} site -DskipTests=true"
+                      
+                      step([$class: 'CheckStylePublisher', unstableTotalAll:'20'])
+                      step([$class: 'PmdPublisher', unstableTotalAll:'20'])
+                      step([$class: 'FindBugsPublisher', pattern: '**/findbugsXml.xml', unstableTotalAll:'20'])
+                      step([$class: 'JacocoPublisher'])
+                      publishHTML (target: [keepAll: true, reportDir: 'target/site', reportFiles: 'project-info.html', reportName: "Site Report"])
+                    }
+                  }
+                }
+                stage('Archive App') {
+                  steps {
+                    sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
+                  }
+                }
+                stage('Deploy DEV') {
+                  steps {
+                    sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+                    sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
+                    
+                    openshift.withProject(env.DEV_PROJECT) {
+                      def build = openshift.selector("bc", "tasks");
+                      if (! build.exists()) {
+                        build = openshift.newBuild("--name=tasks", "--image-stream=jboss-eap70-openshift:1.5", "--binary=true", "--labels=app=tasks")
+                      }
 
-             stage ('Test') {
-               sh "${mvnCmd} test"
-               step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-             }
-            
-             stage ('Analysis (Security, Bugs, etc)') {
-               sh "${mvnCmd} site -DskipTests=true"
-              
-               step([$class: 'CheckStylePublisher', unstableTotalAll:'20'])
-               step([$class: 'PmdPublisher', unstableTotalAll:'20'])
-               step([$class: 'FindBugsPublisher', pattern: '**/findbugsXml.xml', unstableTotalAll:'20'])
-               step([$class: 'JacocoPublisher'])
-               publishHTML (target: [keepAll: true, reportDir: 'target/site', reportFiles: 'project-info.html', reportName: "Site Report"])
-             }
+                      build.startBuild("--from-dir=oc-build", "--wait=true")
 
-             stage ('Push to Nexus') {
-              sh "${mvnCmd} deploy -DskipTests=true"
-             }
+                      if (! openshift.selector( 'dc', [ app:'tasks' ] ).exists()) {
+                        def app = openshift.newApp("tasks:latest")
+                        app.narrow("svc").expose();
+                      }
+                    }
+                  }
+                }
+                stage('Promote?') {
+                  steps {
+                    timeout(time:15, unit:'MINUTES') {
+                        input message: "Promote to STAGE?", ok: "Promote"
+                    }
+                  }
+                }
+                stage('Deploy STAGE?') {
+                  steps {
+                    def v = version()
+                    openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${v}")
+                    openshift.withProject(env.STAGE_PROJECT) {
+                      if (openshift.selector( 'dc', [ app:'tasks' ] ).exists()) {
+                        openshift.selector( 'dc', [ app:'tasks' ] ).delete();
+                        openshift.selector( 'svc', [ app:'tasks' ] ).delete();
+                        openshift.selector( 'route', [ app:'tasks' ] ).delete();
+                      }
 
-             stage ('Deploy DEV') {
-               sh "rm -rf oc-build && mkdir -p oc-build/deployments"
-               sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
-               // clean up. keep the image stream
-               sh "oc delete bc,dc,svc,route -l app=tasks -n $dev"
-               // create build. override the exit code since it complains about exising imagestream
-               sh "oc new-build --name=tasks --image-stream=jboss-eap70-openshift:1.5 --binary=true --labels=app=tasks -n $dev || true"
-               // build image
-               sh "oc start-build tasks --from-dir=oc-build --wait=true -n $dev"
-               // deploy image
-               sh "oc new-app tasks:latest -n $dev"
-               sh "oc expose svc/tasks -n $dev"
-             }
-
-             stage ('Deploy STAGE') {
-               timeout(time:15, unit:'MINUTES') {
-                  input message: "Promote to STAGE?", ok: "Promote"
-               }
-
-               def v = version()
-               // tag for stage
-               sh "oc tag $dev/tasks:latest ${stage}/tasks:${v}"
-               // clean up. keep the imagestream
-               sh "oc delete bc,dc,svc,route -l app=tasks -n $stage"
-               // deploy stage image
-               sh "oc new-app tasks:${v} -n $stage"
-               sh "oc expose svc/tasks -n $stage"
-             }
+                      def app = openshift.newApp("tasks:${v}")
+                      app.narrow("svc").expose();
+                    }
+                  }
+                }
+              }
+            }
           }
 
           def version() {
@@ -232,19 +267,22 @@ objects:
               echo "$_NAME is ready."
             }
 
-            oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template 
+            if [ "${WITH_SONAR}" == "true" ] ; then
+              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template 
+            fi
+
             oc new-app -f http://bit.ly/openshift-nexus3-template 
 
             HOSTNAME=$(oc get route nexus -o template --template='{{.spec.host}}' | sed "s/nexus-${CICD_NAMESPACE}.//g")
             GOGS_HOSTNAME="gogs-$CICD_NAMESPACE.$HOSTNAME"
 
-            oc new-app -f http://bit.ly/openshift-gogs-persistent-template --param=GOGS_VERSION=0.11.29 --param=HOSTNAME=$GOGS_HOSTNAME
+            oc new-app -f http://bit.ly/openshift-gogs-persistent-template --param=GOGS_VERSION=0.11.29 --param=HOSTNAME=$GOGS_HOSTNAME --param=SKIP_TLS_VERIFY=true
 
             sleep 5
 
             oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
-            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52
-            oc label dc jenkins app=jenkins --overwrite
+            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true
+            oc label dc jenkins app=jenkins --overwrite 
 
             wait_while_empty "Gogs PostgreSQL" 600 "oc get ep gogs-postgresql -o yaml | grep 'addresses:'"
             wait_while_empty "Gogs" 600 "oc get ep gogs -o yaml | grep 'addresses:'"
