@@ -6,8 +6,8 @@ This repository includes the infrastructure and pipeline definition for continuo
 
 1. Code is cloned from Gogs, built, tested and analyzed for bugs and bad patterns
 2. The WAR artifact is pushed to Nexus Repository manager
-3. A Docker image (_tasks:latest_) is built based on the _Tasks_ application WAR artifact deployed on JBoss EAP 6
-4. The _Tasks_ Docker image is deployed in a fresh new container in DEV project
+3. A container image (_tasks:latest_) is built based on the _Tasks_ application WAR artifact deployed on JBoss EAP 6
+4. The _Tasks_ container image is deployed in a fresh new container in DEV project
 5. If tests successful, the DEV image is tagged with the application version (_tasks:7.x_) in the STAGE project
 6. The staged image is deployed in a fresh new container in the STAGE project
 
@@ -19,7 +19,7 @@ The application used in this pipeline is a JAX-RS application which is available
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
 # Prerequisites
-* 8+ GB memory available on OpenShift nodes
+* 8+ GB memory for OpenShift (10+ GB memory if using SonarQube)
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 # Setup on RHPDS
@@ -38,9 +38,17 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
   # Grant Jenkins Access to Projects
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
+  ```
 
-  # Deploy Pipeline
+You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins 
+and generated reports within the Jenkins:
+
+  ```
+  # Deploy Pipeline with SonarQube
   oc new-app -n cicd -f cicd-template.yaml
+
+  # Deploy Pipeline without SonarQube
+  oc new-app -n cicd -f cicd-template.yaml --param=WITH_SONAR=false
   ```
 
 To use custom project names, change `cicd`, `dev` and `stage` in the above commands to
@@ -53,9 +61,9 @@ your own names and use the following to create the demo:
 # Setup on OpenShift (Script)
 Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
   ```
-  ./provision.sh deploy                   
-  ./provision.sh deploy --project-suffix [suffix]
-  ./provision.sh delete --project-suffix [suffix]
+  ./provision.sh --help
+  ./provision.sh deploy --with-sonar --ephemeral
+  ./provision.sh delete
   ```
 
 # Guide
@@ -78,6 +86,7 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
   * Explore _Tasks - Stage_ project in OpenShift console and verify the application is deployed in the STAGE environment  
 
+![](images/jenkins-analysis.png?raw=true)
 
 6. Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
 
@@ -92,13 +101,6 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
 ![](images/openshift-pipeline.png?raw=true)
 
 # Troubleshoot
-
-* SonarQube sometimes fails to load quality profiles requires for static analysis.
-  ```
-  [ERROR] Failed to execute goal org.sonarsource.scanner.maven:sonar-maven-plugin:3.0.1:sonar (default-cli) on project jboss-tasks-rs: No quality profiles have been found, you probably don't have any
-  ```
-
-  Scale down the SonarQube pod and its PostgreSQL database to 0 and then scale them up to 1 again (first PostgreSQL, then SonarQube) to re-initialize SonarQube.
 
 * If pipeline execution fails with ```error: no match for "jboss-eap70-openshift"```, import the jboss imagestreams in OpenShift.
 

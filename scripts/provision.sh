@@ -23,12 +23,18 @@ function usage() {
     echo "OPTIONS:"
     echo "   --user [username]         The admin user for the demo projects. mandatory if logged in as system:admin"
     echo "   --project-suffix [suffix] Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
+    echo "   --ephemeral               Deploy demo without persistent storage"
+    echo "   --use-sonar               Use SonarQube for static code analysis instead of CheckStyle,FindBug,etc"
+    echo "   --oc-options              oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
 }
 
 ARG_USERNAME=
 ARG_PROJECT_SUFFIX=
 ARG_COMMAND=
+ARG_EPHEMERAL=false
+ARG_OC_OPS=
+ARG_WITH_SONAR=false
 
 while :; do
     case $1 in
@@ -64,6 +70,22 @@ while :; do
                 exit 255
             fi
             ;;
+        --oc-options)
+            if [ -n "$2" ]; then
+                ARG_OC_OPS=$2
+                shift
+            else
+                printf 'ERROR: "--oc-options" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --ephemeral)
+            ARG_EPHEMERAL=true
+            ;;
+        --use-sonar)
+            ARG_WITH_SONAR=true
+            ;;
         -h|--help)
             usage
             exit 0
@@ -88,53 +110,46 @@ done
 # CONFIGURATION                                                                #
 ################################################################################
 
-LOGGEDIN_USER=$(oc whoami)
+LOGGEDIN_USER=$(oc $ARG_OC_OPS whoami)
 OPENSHIFT_USER=${ARG_USERNAME:-$LOGGEDIN_USER}
 PRJ_SUFFIX=${ARG_PROJECT_SUFFIX:-`echo $OPENSHIFT_USER | sed -e 's/[-@].*//g'`}
 GITHUB_ACCOUNT=${GITHUB_ACCOUNT:-OpenShiftDemos}
 GITHUB_REF=${GITHUB_REF:-ocp-3.7}
 
 function deploy() {
-  oc new-project dev-$PRJ_SUFFIX   --display-name="Tasks - Dev"
-  oc new-project stage-$PRJ_SUFFIX --display-name="Tasks - Stage"
-  oc new-project cicd-$PRJ_SUFFIX  --display-name="CI/CD"
+  oc $ARG_OC_OPS new-project dev-$PRJ_SUFFIX   --display-name="Tasks - Dev"
+  oc $ARG_OC_OPS new-project stage-$PRJ_SUFFIX --display-name="Tasks - Stage"
+  oc $ARG_OC_OPS new-project cicd-$PRJ_SUFFIX  --display-name="CI/CD"
 
   sleep 2
 
-  oc policy add-role-to-user edit system:serviceaccount:cicd-$PRJ_SUFFIX:jenkins -n dev-$PRJ_SUFFIX
-  oc policy add-role-to-user edit system:serviceaccount:cicd-$PRJ_SUFFIX:jenkins -n stage-$PRJ_SUFFIX
+  oc $ARG_OC_OPS policy add-role-to-user edit system:serviceaccount:cicd-$PRJ_SUFFIX:jenkins -n dev-$PRJ_SUFFIX
+  oc $ARG_OC_OPS policy add-role-to-user edit system:serviceaccount:cicd-$PRJ_SUFFIX:jenkins -n stage-$PRJ_SUFFIX
 
   if [ $LOGGEDIN_USER == 'system:admin' ] ; then
-    oc adm policy add-role-to-user admin $ARG_USERNAME -n dev-$PRJ_SUFFIX >/dev/null 2>&1
-    oc adm policy add-role-to-user admin $ARG_USERNAME -n stage-$PRJ_SUFFIX >/dev/null 2>&1
-    oc adm policy add-role-to-user admin $ARG_USERNAME -n cicd-$PRJ_SUFFIX >/dev/null 2>&1
+    oc $ARG_OC_OPS adm policy add-role-to-user admin $ARG_USERNAME -n dev-$PRJ_SUFFIX >/dev/null 2>&1
+    oc $ARG_OC_OPS adm policy add-role-to-user admin $ARG_USERNAME -n stage-$PRJ_SUFFIX >/dev/null 2>&1
+    oc $ARG_OC_OPS adm policy add-role-to-user admin $ARG_USERNAME -n cicd-$PRJ_SUFFIX >/dev/null 2>&1
     
-    oc annotate --overwrite namespace dev-$PRJ_SUFFIX   demo=openshift-cd-$PRJ_SUFFIX >/dev/null 2>&1
-    oc annotate --overwrite namespace stage-$PRJ_SUFFIX demo=openshift-cd-$PRJ_SUFFIX >/dev/null 2>&1
-    oc annotate --overwrite namespace cicd-$PRJ_SUFFIX  demo=openshift-cd-$PRJ_SUFFIX >/dev/null 2>&1
+    oc $ARG_OC_OPS annotate --overwrite namespace dev-$PRJ_SUFFIX   demo=openshift-cd-$PRJ_SUFFIX >/dev/null 2>&1
+    oc $ARG_OC_OPS annotate --overwrite namespace stage-$PRJ_SUFFIX demo=openshift-cd-$PRJ_SUFFIX >/dev/null 2>&1
+    oc $ARG_OC_OPS annotate --overwrite namespace cicd-$PRJ_SUFFIX  demo=openshift-cd-$PRJ_SUFFIX >/dev/null 2>&1
 
-    oc adm pod-network join-projects --to=cicd-$PRJ_SUFFIX dev-$PRJ_SUFFIX stage-$PRJ_SUFFIX >/dev/null 2>&1
+    oc $ARG_OC_OPS adm pod-network join-projects --to=cicd-$PRJ_SUFFIX dev-$PRJ_SUFFIX stage-$PRJ_SUFFIX >/dev/null 2>&1
   fi
 
   sleep 2
 
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
-  oc process -f $template \
-      --param DEV_PROJECT=dev-$PRJ_SUFFIX \
-      --param STAGE_PROJECT=stage-$PRJ_SUFFIX \
-      -n cicd-$PRJ_SUFFIX | oc create -f - -n cicd-$PRJ_SUFFIX
-
-  sleep 5
-
-  oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi -n cicd-$PRJ_SUFFIX
+  oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_SONAR=$ARG_WITH_SONAR --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
 }
 
 function make_idle() {
   echo_header "Idling Services"
-  oc idle -n dev-$PRJ_SUFFIX --all
-  oc idle -n stage-$PRJ_SUFFIX --all
-  oc idle -n cicd-$PRJ_SUFFIX --all
+  oc $ARG_OC_OPS idle -n dev-$PRJ_SUFFIX --all
+  oc $ARG_OC_OPS idle -n stage-$PRJ_SUFFIX --all
+  oc $ARG_OC_OPS idle -n cicd-$PRJ_SUFFIX --all
 }
 
 function make_unidle() {
@@ -143,10 +158,10 @@ function make_unidle() {
 
   for project in dev-$PRJ_SUFFIX stage-$PRJ_SUFFIX cicd-$PRJ_SUFFIX
   do
-    for dc in $(oc get dc -n $project -o=custom-columns=:.metadata.name); do
-      local replicas=$(oc get dc $dc --template='{{ index .metadata.annotations "idling.alpha.openshift.io/previous-scale"}}' -n $project 2>/dev/null)
+    for dc in $(oc $ARG_OC_OPS get dc -n $project -o=custom-columns=:.metadata.name); do
+      local replicas=$(oc $ARG_OC_OPS get dc $dc --template='{{ index .metadata.annotations "idling.alpha.openshift.io/previous-scale"}}' -n $project 2>/dev/null)
       if [[ $replicas =~ $_DIGIT_REGEX ]]; then
-        oc scale --replicas=$replicas dc $dc -n $project
+        oc $ARG_OC_OPS scale --replicas=$replicas dc $dc -n $project
       fi
     done
   done
@@ -154,8 +169,17 @@ function make_unidle() {
 
 function set_default_project() {
   if [ $LOGGEDIN_USER == 'system:admin' ] ; then
-    oc project default >/dev/null
+    oc $ARG_OC_OPS project default >/dev/null
   fi
+}
+
+function remove_storage_claim() {
+  local _DC=$1
+  local _VOLUME_NAME=$2
+  local _CLAIM_NAME=$3
+  local _PROJECT=$4
+  oc $ARG_OC_OPS volumes dc/$_DC --name=$_VOLUME_NAME --add -t emptyDir --overwrite -n $_PROJECT
+  oc $ARG_OC_OPS delete pvc $_CLAIM_NAME -n $_PROJECT >/dev/null 2>&1
 }
 
 function echo_header() {
@@ -189,7 +213,7 @@ echo_header "OpenShift CI/CD Demo ($(date))"
 case "$ARG_COMMAND" in
     delete)
         echo "Delete demo..."
-        oc delete project dev-$PRJ_SUFFIX stage-$PRJ_SUFFIX cicd-$PRJ_SUFFIX
+        oc $ARG_OC_OPS delete project dev-$PRJ_SUFFIX stage-$PRJ_SUFFIX cicd-$PRJ_SUFFIX
         echo
         echo "Delete completed successfully!"
         ;;

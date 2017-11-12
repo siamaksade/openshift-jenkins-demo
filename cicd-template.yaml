@@ -20,8 +20,13 @@ parameters:
   required: true
 - displayName: Deploy SonarQube
   description: If SonarQube should be deployed and used in the pipeline. Set to false to preserve resources.
-  value: true
+  value: "true"
   name: WITH_SONAR
+  required: true
+- displayName: Ephemeral
+  description: Use no persistent storage for Gogs and Nexus
+  value: "true"
+  name: EPHEMERAL
   required: true
 - description: Webhook secret
   from: '[a-zA-Z0-9]{8}'
@@ -67,37 +72,41 @@ objects:
           value: ${DEV_PROJECT}
         - name: STAGE_PROJECT
           value: ${STAGE_PROJECT}
+        - name: WITH_SONAR
+          value: ${WITH_SONAR}
         jenkinsfile: |-
-          def mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
+          def version, mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
 
-          openshift.withCluster() {
-            pipeline {
-              agent {
-                node {
-                  label 'maven'
+          pipeline {
+            agent {
+              label 'maven'
+            }
+            stages {
+              stage('Build') {
+                steps {
+                  git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
+                  script {
+                      def pom = readMavenPom file: 'pom.xml'
+                      version = pom.version
+                  }
+                  sh "${mvnCmd} install -DskipTests=true"
                 }
               }
-              stages {
-                stage('Build') {
-                  steps {
-                    git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
-                    sh "${mvnCmd} clean install -DskipTests=true"                  
-                  }
+              stage('Test') {
+                steps {
+                  sh "${mvnCmd} test"
+                  step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
                 }
-                stage('Test') {
-                  steps {
-                    sh "${mvnCmd} test"
-                    step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-                  }
-                }
-                stage('Security Analysis') {
-                  steps {
-                    if (${WITH_SONAR}) {
+              }
+              stage('Code Analysis') {
+                steps {
+                  script {
+                    if (env.WITH_SONAR.toBoolean()) {
                       sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
                     } else {
                       sh "${mvnCmd} site -DskipTests=true"
                       
-                      step([$class: 'CheckStylePublisher', unstableTotalAll:'20'])
+                      step([$class: 'CheckStylePublisher', unstableTotalAll:'300'])
                       step([$class: 'PmdPublisher', unstableTotalAll:'20'])
                       step([$class: 'FindBugsPublisher', pattern: '**/findbugsXml.xml', unstableTotalAll:'20'])
                       step([$class: 'JacocoPublisher'])
@@ -105,61 +114,111 @@ objects:
                     }
                   }
                 }
-                stage('Archive App') {
-                  steps {
-                    sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
+              }
+              stage('Archive App') {
+                steps {
+                  sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
+                }
+              }
+              stage('Create Image Builder') {
+                when {
+                  expression {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        return !openshift.selector("bc", "tasks").exists();
+                      }
+                    }
                   }
                 }
-                stage('Deploy DEV') {
-                  steps {
-                    sh "rm -rf oc-build && mkdir -p oc-build/deployments"
-                    sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
-                    
-                    openshift.withProject(env.DEV_PROJECT) {
-                      def build = openshift.selector("bc", "tasks");
-                      if (! build.exists()) {
-                        build = openshift.newBuild("--name=tasks", "--image-stream=jboss-eap70-openshift:1.5", "--binary=true", "--labels=app=tasks")
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        openshift.newBuild("--name=tasks", "--image-stream=jboss-eap70-openshift:1.5", "--binary=true")
                       }
-
-                      build.startBuild("--from-dir=oc-build", "--wait=true")
-
-                      if (! openshift.selector( 'dc', [ app:'tasks' ] ).exists()) {
+                    }
+                  }
+                }
+              }
+              stage('Build Image') {
+                steps {
+                  sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+                  sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
+                  
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        openshift.selector("bc", "tasks").startBuild("--from-dir=oc-build", "--wait=true")
+                      }
+                    }
+                  }
+                }
+              }
+              stage('Create DEV') {
+                when {
+                  expression {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        return !openshift.selector('dc', 'tasks').exists()
+                      }
+                    }
+                  }
+                }
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
                         def app = openshift.newApp("tasks:latest")
+                        openshift.set("triggers", "dc/tasks", "--remove-all")
                         app.narrow("svc").expose();
+                        app.narrow("dc").rollout().status()
                       }
                     }
                   }
                 }
-                stage('Promote?') {
-                  steps {
-                    timeout(time:15, unit:'MINUTES') {
-                        input message: "Promote to STAGE?", ok: "Promote"
+              }
+              stage('Deploy DEV') {
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        openshift.selector("dc", "tasks").rollout().latest();
+                      }
                     }
                   }
                 }
-                stage('Deploy STAGE?') {
-                  steps {
-                    def v = version()
-                    openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${v}")
-                    openshift.withProject(env.STAGE_PROJECT) {
-                      if (openshift.selector( 'dc', [ app:'tasks' ] ).exists()) {
-                        openshift.selector( 'dc', [ app:'tasks' ] ).delete();
-                        openshift.selector( 'svc', [ app:'tasks' ] ).delete();
-                        openshift.selector( 'route', [ app:'tasks' ] ).delete();
-                      }
+              }
+              stage('Promote to STAGE?') {
+                steps {
+                  timeout(time:15, unit:'MINUTES') {
+                      input message: "Promote to STAGE?", ok: "Promote"
+                  }
 
-                      def app = openshift.newApp("tasks:${v}")
-                      app.narrow("svc").expose();
+                  script {
+                    openshift.withCluster() {
+                      openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${version}")
+                    }
+                  }
+                }
+              }
+              stage('Deploy STAGE') {
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.STAGE_PROJECT) {
+                        if (openshift.selector('dc', 'tasks').exists()) {
+                          openshift.selector('dc', 'tasks').delete()
+                          openshift.selector('svc', 'tasks').delete()
+                          openshift.selector('route', 'tasks').delete()
+                        }
+
+                        openshift.newApp("tasks:${version}").narrow("svc").expose()
+                      }
                     }
                   }
                 }
               }
             }
-          }
-
-          def version() {
-            def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
-            matcher ? matcher[0][1] : null
           }
       type: JenkinsPipeline
 - apiVersion: v1
@@ -185,13 +244,7 @@ objects:
         <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
           <memory>false</memory>
         </workspaceVolume>
-        <volumes>
-          <org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
-            <mountPath>/home/jenkins/.m2</mountPath>
-            <claimName>jenkins-maven-slave-pvc</claimName>
-            <readOnly>false</readOnly>
-          </org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
-        </volumes>
+        <volumes />
         <containers>
           <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
             <name>jnlp</name>
@@ -213,16 +266,6 @@ objects:
         <annotations/>
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
-- kind: PersistentVolumeClaim
-  apiVersion: v1
-  metadata:
-    name: jenkins-maven-slave-pvc
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 4Gi
 # Setup Demo
 - apiVersion: batch/v1
   kind: Job
@@ -240,52 +283,52 @@ objects:
           job-name: cicd-demo-setup
       spec:
         containers:
-        - command:
+        - env:
+          - name: CICD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          command:
           - /bin/bash
           - -x
           - -c
           - |
-            function wait_while_empty() {
-              local _NAME=$1
-              local _TIMEOUT=$(($2/5))
-              local _CONDITION=$3
-
-              echo "Waiting for $_NAME to be ready..."
-              local x=1
-              while [ -z "$(eval ${_CONDITION})" ]
-              do
-                echo "."
-                sleep 5
-                x=$(( $x + 1 ))
-                if [ $x -gt $_TIMEOUT ]
-                then
-                  echo "$_NAME still not ready, I GIVE UP!"
-                  exit 255
-                fi
-              done
-
-              echo "$_NAME is ready."
-            }
+            oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
+            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52,pipeline-utility-steps:1.5.1 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true
+            oc label dc jenkins app=jenkins --overwrite 
 
             if [ "${WITH_SONAR}" == "true" ] ; then
-              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template 
+              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=6.7 --param=SONAR_MAX_MEMORY=4Gi
             fi
 
-            oc new-app -f http://bit.ly/openshift-nexus3-template 
+            if [ "${EPHEMERAL}" == "true" ] ; then
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.6.1
+            else
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.6.1
+            fi
 
             HOSTNAME=$(oc get route nexus -o template --template='{{.spec.host}}' | sed "s/nexus-${CICD_NAMESPACE}.//g")
             GOGS_HOSTNAME="gogs-$CICD_NAMESPACE.$HOSTNAME"
 
-            oc new-app -f http://bit.ly/openshift-gogs-persistent-template --param=GOGS_VERSION=0.11.29 --param=HOSTNAME=$GOGS_HOSTNAME --param=SKIP_TLS_VERIFY=true
+            if [ "${EPHEMERAL}" == "true" ] ; then
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-template.yaml \
+                  --param=GOGS_VERSION=0.11.29 \
+                  --param=HOSTNAME=$GOGS_HOSTNAME \
+                  --param=SKIP_TLS_VERIFY=true
+            else
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml \
+                  --param=GOGS_VERSION=0.11.29 \
+                  --param=HOSTNAME=$GOGS_HOSTNAME \
+                  --param=SKIP_TLS_VERIFY=true
+            fi
+            
 
             sleep 5
 
-            oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
-            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true
-            oc label dc jenkins app=jenkins --overwrite 
+            oc rollout status dc/gogs-postgresql
+            oc rollout status dc/gogs
 
-            wait_while_empty "Gogs PostgreSQL" 600 "oc get ep gogs-postgresql -o yaml | grep 'addresses:'"
-            wait_while_empty "Gogs" 600 "oc get ep gogs -o yaml | grep 'addresses:'"
+            sleep 5
 
             GOGS_SVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
             GOGS_USER=gogs
@@ -296,6 +339,7 @@ objects:
               --form password=$GOGS_PWD \
               --form retype=$GOGS_PWD \
               --form email=admin@gogs.com)
+
             sleep 5
 
             if [ $_RETURN != "200" ] && [ $_RETURN != "302" ] ; then
@@ -347,12 +391,6 @@ objects:
               cat /tmp/curl.log
               exit 255
             fi
-
-          env:
-            - name: CICD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
           image: openshift/origin:latest
           name: cicd-demo-setup-job
           resources: {}
