@@ -665,7 +665,7 @@ objects:
       RETURN=$(curl -o /dev/null -vL -w "%{http_code}" -H "Content-Type: application/json" \
       -u gogs:${GOGS_PASSWORD} -X POST http://$GOGSSVC:3000/api/v1/repos/migrate -d @/tmp/data.json)
 
-      if [ $RETURN != "201" ]
+      if [ $RETURN != "201" ] && [ $RETURN != "200" ]
       then
         echo "ERROR: Failed to imported openshift-tasks GitHub repo"
         exit 255
@@ -691,7 +691,7 @@ objects:
       RETURN=$(curl -o /dev/null -vL -w "%{http_code}" -H "Content-Type: application/json" \
       -u gogs:${GOGS_PASSWORD} -X POST http://$GOGSSVC:3000/api/v1/repos/gogs/openshift-tasks/hooks -d @/tmp/data.json)
 
-      if [ $RETURN != "201" ]
+      if [ $RETURN != "201" ] && [ $RETURN != "200" ]
       then
         echo "ERROR: Failed to set webhook"
         exit 255
