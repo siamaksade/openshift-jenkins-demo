@@ -41,10 +41,17 @@ Jenkins needs to access OpenShift API to discover slave images as well accessing
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
   ```
-Create the CI/CD components based on the provided template
+
+
+You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins 
+and generated reports within the Jenkins:
 
   ```
-  oc process -f cicd-template.yaml | oc create -f -
+  # Deploy Pipeline with SonarQube
+  oc new-app -n cicd -f cicd-template-with-sonar.yaml
+
+  # Deploy Pipeline without SonarQube
+  oc new-app -n cicd -f cicd-template.yaml
   ```
 
 To use custom project names, change `cicd`, `dev` and `stage` in the above commands to
