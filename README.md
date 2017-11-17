@@ -60,9 +60,9 @@ your own names and use the following to create the demo:
 
 Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
   ```
-  ./provision.sh deploy                   
-  ./provision.sh deploy --project-suffix [suffix]
-  ./provision.sh delete --project-suffix [suffix]
+  ./provision.sh --help
+  ./provision.sh deploy --with-sonar --ephemeral
+  ./provision.sh delete
   ```
 
 __Note:__ you need ~8GB memory for running this demo.
