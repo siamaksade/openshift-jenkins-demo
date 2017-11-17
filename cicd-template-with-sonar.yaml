@@ -25,7 +25,7 @@ parameters:
   name: STAGE_PROJECT
   required: true
 - displayName: SonarQube version
-  value: "6.5"
+  value: "6.7"
   name: SONARQUBE_VERSION
   required: true
 - displayName: Gogs version
