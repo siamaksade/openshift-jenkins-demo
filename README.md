@@ -33,15 +33,12 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
   oc new-project dev --display-name="Tasks - Dev"
   oc new-project stage --display-name="Tasks - Stage"
   oc new-project cicd --display-name="CI/CD"
-  ```
 
-Jenkins needs to access OpenShift API to discover slave images as well accessing container images. Grant Jenkins service account enough privileges to invoke OpenShift API for the created projects:
-
-  ```
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
-  ```
 
+  oc new-app jenkins-persistent --param=MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49 dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd
+  ```
 
 You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins 
 and generated reports within the Jenkins:
@@ -60,13 +57,6 @@ your own names and use the following to create the demo:
   ```
   oc new-app -n mycicd -f cicd-template.yaml --param DEV_PROJECT=mydev --param STAGE_PROJECT=mystage
   ```
-
-To make sure Jenkins runs smoothly, allow Jenkins to use up to 1Gi memory:
-
-  ```
-  oc set resources dc/jenkins --limits=memory=1Gi -n cicd
-  oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true -n cicd
-  ``` 
 
 Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
   ```
