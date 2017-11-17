@@ -58,10 +58,7 @@ To use custom project names, change `cicd`, `dev` and `stage` in the above comma
 your own names and use the following to create the demo:
 
   ```
-  oc process -f cicd-template.yaml \
-      --param DEV_PROJECT=dev-project-name \
-      --param STAGE_PROJECT=stage-project-name \
-      | oc create -f - -n cicd-project-name
+  oc new-app -n mycicd -f cicd-template.yaml --param DEV_PROJECT=mydev --param STAGE_PROJECT=mystage
   ```
 
 To make sure Jenkins runs smoothly, allow Jenkins to use up to 1Gi memory:
