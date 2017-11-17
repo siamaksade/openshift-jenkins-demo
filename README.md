@@ -37,7 +37,7 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
 
-  oc new-app jenkins-persistent --param=MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49 dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd
+  oc new-app jenkins-persistent --param=MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd
   ```
 
 You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins 

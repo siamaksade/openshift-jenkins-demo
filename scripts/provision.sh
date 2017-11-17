@@ -140,7 +140,7 @@ function deploy() {
     jenkins_template="jenkins-ephemeral"
   fi
   
-  oc $ARG_OC_OPS new-app $jenkins_template --param=MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49 dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd-$PRJ_SUFFIX
+  oc $ARG_OC_OPS new-app $jenkins_template --param=MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd-$PRJ_SUFFIX
 
   sleep 2
 
