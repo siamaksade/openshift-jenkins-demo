@@ -91,7 +91,7 @@ objects:
              stage ('Analysis (Security, Bugs, etc)') {
                sh "${mvnCmd} site -DskipTests=true"
               
-               step([$class: 'CheckStylePublisher', unstableTotalAll:'20'])
+               step([$class: 'CheckStylePublisher', unstableTotalAll:'300'])
                step([$class: 'PmdPublisher', unstableTotalAll:'20'])
                step([$class: 'FindBugsPublisher', pattern: '**/findbugsXml.xml', unstableTotalAll:'20'])
                step([$class: 'JacocoPublisher'])
