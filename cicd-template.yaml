@@ -160,13 +160,7 @@ objects:
         <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
           <memory>false</memory>
         </workspaceVolume>
-        <volumes>
-          <org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
-            <mountPath>/home/jenkins/.m2</mountPath>
-            <claimName>jenkins-maven-slave-pvc</claimName>
-            <readOnly>false</readOnly>
-          </org.csanchez.jenkins.plugins.kubernetes.volumes.PersistentVolumeClaim>
-        </volumes>
+        <volumes />
         <containers>
           <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
             <name>jnlp</name>
@@ -188,16 +182,6 @@ objects:
         <annotations/>
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
-- kind: PersistentVolumeClaim
-  apiVersion: v1
-  metadata:
-    name: jenkins-maven-slave-pvc
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: 4Gi
 # Sonatype Nexus
 - apiVersion: v1
   kind: Service

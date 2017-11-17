@@ -24,6 +24,7 @@ function usage() {
     echo "   --user [username]         The admin user for the demo projects. mandatory if logged in as system:admin"
     echo "   --project-suffix [suffix] Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
     echo "   --ephemeral               Deploy demo without persistent storage"
+    echo "   --use-sonar               Use SonarQube for static code analysis instead of CheckStyle,FindBug,etc"
     echo "   --oc-options              oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
 }
@@ -33,6 +34,7 @@ ARG_PROJECT_SUFFIX=
 ARG_COMMAND=
 ARG_EPHEMERAL=false
 ARG_OC_OPS=
+ARG_USE_SONAR=false
 
 while :; do
     case $1 in
@@ -80,6 +82,9 @@ while :; do
             ;;
         --ephemeral)
             ARG_EPHEMERAL=true
+            ;;
+        --use-sonar)
+            ARG_USE_SONAR=true
             ;;
         -h|--help)
             usage
@@ -145,6 +150,11 @@ function deploy() {
   sleep 2
   
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
+
+  if [ "$ARG_USE_SONAR" = true ] ; then
+    template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template-with-sonar.yaml
+  fi
+
   echo "Using template $template"
   oc $ARG_OC_OPS process -f $template \
       --param DEV_PROJECT=dev-$PRJ_SUFFIX \
@@ -156,6 +166,7 @@ function deploy() {
   if [ "$ARG_EPHEMERAL" = true ] ; then
     remove_storage_claim postgresql-gogs postgresql-data postgresql-gogs-data cicd-$PRJ_SUFFIX
     remove_storage_claim gogs gogs-data gogs-data cicd-$PRJ_SUFFIX
+    remove_storage_claim gogs gogs-config gogs-config cicd-$PRJ_SUFFIX
   fi
 }
 
