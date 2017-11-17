@@ -1,6 +1,6 @@
-*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.6, origin-1.6, etc*
+*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.5, origin-1.3, etc*
 
-# CI/CD Demo - OpenShift Container Platform 3.6
+# CI/CD Demo - OpenShift Container Platform 3.5
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus and SonarQube on OpenShift. On every pipeline execution, the code goes through the following steps:
 
@@ -36,7 +36,7 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
 
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
-  
+
   oc new-app jenkins-persistent --param=MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52 -n cicd
   ```
 
@@ -65,6 +65,8 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
   ./provision.sh delete --project-suffix [suffix]
   ```
 
+__Note:__ you need ~8GB memory for running this demo.
+
 # Guide
 
 1. A Jenkins pipeline is pre-configured which clones Tasks application source code from Gogs (running on OpenShift), builds, deploys and promotes the result through the deployment pipeline. In the CI/CD project, click on _Builds_ and then _Pipelines_ to see the list of defined pipelines.
@@ -85,7 +87,6 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
   * Explore _Tasks - Stage_ project in OpenShift console and verify the application is deployed in the STAGE environment  
 
-
 6. Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
 
 7. Check out Jenkins, a pipeline instance is created and is being executed. The pipeline will fail during unit tests due to the enabled unit test.
@@ -96,7 +97,7 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
 
 10. Run the unit test in the IDE. The unit test runs green. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
-![](images/openshift-pipeline.png?raw=true)
+![](images/jenkins-pipeline.png?raw=true)
 
 # Troubleshoot
 
@@ -130,10 +131,3 @@ Instead of the above, you can also use the `scripts/provision.sh` script provide
   oc login -u system:admin
   oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift
   ```
-
-* If you get this maven error: 
-  ```
-  [Static Analysis] /opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed
-  ``` 
-  during static analysis in the pipeline, just run the pipeline again. This happens when the analysis takes 
-  too long to run which happens on the first run.
