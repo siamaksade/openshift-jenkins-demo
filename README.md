@@ -1,6 +1,6 @@
-*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.5, origin-1.3, etc*
+*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.6, ocp-3.5, etc*
 
-# CI/CD Demo - OpenShift Container Platform 3.5
+# CI/CD Demo - OpenShift Container Platform 3.6
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus and SonarQube on OpenShift. On every pipeline execution, the code goes through the following steps:
 

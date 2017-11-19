@@ -1,6 +1,6 @@
 # Local OpenShift Container Platform
 
-Download and install [Container Development Kit (CDK) 3.0](https://developers.redhat.com/products/cdk/hello-world/)
+Download and install [Container Development Kit (CDK) 3.2](https://developers.redhat.com/products/cdk/download/)
 
 Start up an OpenShift cluster:
 
