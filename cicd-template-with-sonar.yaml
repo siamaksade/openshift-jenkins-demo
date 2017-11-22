@@ -86,7 +86,7 @@ objects:
     strategy:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
-          node('mvn') {
+          node('maven') {
              // define commands
              def mvnCmd = "mvn -s configuration/cicd-settings.xml"
 
