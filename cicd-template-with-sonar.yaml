@@ -846,8 +846,8 @@ objects:
           - containerPort: 9000
             protocol: TCP
           livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 60
+            failureThreshold: 5
+            initialDelaySeconds: 180
             periodSeconds: 20
             successThreshold: 1
             httpGet:
@@ -855,7 +855,7 @@ objects:
               path: /
             timeoutSeconds: 5
           readinessProbe:
-            failureThreshold: 3
+            failureThreshold: 5
             initialDelaySeconds: 60
             periodSeconds: 20
             successThreshold: 1
@@ -869,7 +869,7 @@ objects:
               memory: 1Gi
             limits:
               cpu: 1
-              memory: 2Gi
+              memory: 4Gi
           terminationMessagePath: /dev/termination-log
         dnsPolicy: ClusterFirst
         restartPolicy: Always
