@@ -117,7 +117,7 @@ objects:
              }
 
              stage ('Deploy STAGE') {
-               timeout(time:5, unit:'MINUTES') {
+               timeout(time:15, unit:'MINUTES') {
                   input message: "Promote to STAGE?", ok: "Promote"
                }
 
