@@ -270,17 +270,12 @@ objects:
 - apiVersion: batch/v1
   kind: Job
   metadata:
-    labels:
-      job-name: cicd-demo-setup
-    name: cicd-demo-setup
+    name: cicd-demo-installer
   spec:
     activeDeadlineSeconds: 400
     completions: 1
     parallelism: 1
     template:
-      metadata:
-        labels:
-          job-name: cicd-demo-setup
       spec:
         containers:
         - env:
@@ -297,17 +292,7 @@ objects:
             oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52,pipeline-utility-steps:1.5.1 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true
             oc label dc jenkins app=jenkins --overwrite 
 
-            if [ "${WITH_SONAR}" == "true" ] ; then
-              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=6.7 --param=SONAR_MAX_MEMORY=4Gi
-            fi
-
-            if [ "${EPHEMERAL}" == "true" ] ; then
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.6.1 --param=MAX_MEMORY=2Gi
-            else
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.6.1 --param=MAX_MEMORY=2Gi
-            fi
-
-            HOSTNAME=$(oc get route nexus -o template --template='{{.spec.host}}' | sed "s/nexus-${CICD_NAMESPACE}.//g")
+            HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
             GOGS_HOSTNAME="gogs-$CICD_NAMESPACE.$HOSTNAME"
 
             if [ "${EPHEMERAL}" == "true" ] ; then
@@ -322,17 +307,23 @@ objects:
                   --param=SKIP_TLS_VERIFY=true
             fi
             
-
             sleep 5
 
-            oc rollout status dc/gogs-postgresql
-            oc rollout status dc/gogs
+            if [ "${WITH_SONAR}" == "true" ] ; then
+              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=6.7 --param=SONAR_MAX_MEMORY=4Gi
+            fi
 
-            sleep 5
+            if [ "${EPHEMERAL}" == "true" ] ; then
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.6.1 --param=MAX_MEMORY=2Gi
+            else
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.6.1 --param=MAX_MEMORY=2Gi
+            fi
 
             GOGS_SVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
             GOGS_USER=gogs
             GOGS_PWD=gogs
+
+            oc rollout status dc gogs
 
             _RETURN=$(curl -o /tmp/curl.log -sL --post302 -w "%{http_code}" http://$GOGS_SVC:3000/user/sign_up \
               --form user_name=$GOGS_USER \
@@ -391,8 +382,8 @@ objects:
               cat /tmp/curl.log
               exit 255
             fi
-          image: openshift/origin:latest
-          name: cicd-demo-setup-job
+          image: openshift/origin:v3.7.0
+          name: cicd-demo-installer-job
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
