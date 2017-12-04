@@ -26,6 +26,14 @@ The application used in this pipeline is a JAX-RS application which is available
 
 If you have access to RHPDS, provisioning of this demo is automated via the service catalog under **OpenShift Demos &rarr; OpenShift CI/CD for Monolith**. If you don't know what RHPDS is, read the instructions in the next section.
 
+# Setup on OpenShift (Script)
+Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
+  ```
+  ./provision.sh --help
+  ./provision.sh deploy --with-sonar --ephemeral
+  ./provision.sh delete
+  ```
+  
 # Setup on OpenShift (Manual)
 Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
@@ -56,14 +64,6 @@ your own names and use the following to create the demo:
 
   ```shell
   oc new-app -n cicd -f cicd-template.yaml --param DEV_PROJECT=dev-project-name --param STAGE_PROJECT=stage-project-name
-  ```
-
-# Setup on OpenShift (Script)
-Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
-  ```
-  ./provision.sh --help
-  ./provision.sh deploy --with-sonar --ephemeral
-  ./provision.sh delete
   ```
 
 # Guide
