@@ -27,7 +27,16 @@ The application used in this pipeline is a JAX-RS application which is available
 If you have access to RHPDS, provisioning of this demo is automated via the service catalog under **OpenShift Demos &rarr; OpenShift CI/CD for Monolith**. If you don't know what RHPDS is, read the instructions in the next section.
 
 # Setup on OpenShift (Script)
-Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above:
+Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above.
+
+OpenShift 3.7 by default uses an older version of Jenkins. Import all Jenkins image tags in order to use the newer Jenkins image 
+for this demo:
+  ```
+  oc login -u system:admin
+  oc import-image jenkins --from="registry.access.redhat.com/openshift3/jenkins-2-rhel7" --confirm --all -n openshift
+  ```
+
+And then provision the demo:
   ```
   ./provision.sh --help
   ./provision.sh deploy --with-sonar --ephemeral
@@ -47,7 +56,13 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
   ```
-
+OpenShift 3.7 by default uses an older version of Jenkins. Import all Jenkins image tags in order to use the newer Jenkins image 
+for this demo:
+  ```
+  oc login -u system:admin
+  oc import-image jenkins --from="registry.access.redhat.com/openshift3/jenkins-2-rhel7" --confirm --all -n openshift
+  ```
+  
 You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins 
 and generated reports within the Jenkins:
 
