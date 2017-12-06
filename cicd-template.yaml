@@ -171,7 +171,6 @@ objects:
                         def app = openshift.newApp("tasks:latest")
                         openshift.set("triggers", "dc/tasks", "--remove-all")
                         app.narrow("svc").expose();
-                        app.narrow("dc").rollout().status()
                       }
                     }
                   }

@@ -140,6 +140,10 @@ function deploy() {
 
   sleep 2
 
+  oc new-app jenkins-ephemeral --param=JENKINS_IMAGE_STREAM_TAG=v3.7 -n cicd-$PRJ_SUFFIX
+
+  sleep 2
+
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
   oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_SONAR=$ARG_WITH_SONAR --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
