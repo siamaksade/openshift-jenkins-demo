@@ -144,7 +144,7 @@ function deploy() {
 
   sleep 10
 
-  oc new-app jenkins-ephemeral --param=JENKINS_IMAGE_STREAM_TAG=v3.7 -n cicd-$PRJ_SUFFIX
+  oc new-app jenkins-ephemeral --param=JENKINS_IMAGE_STREAM_TAG=jenkins:v3.7 -n cicd-$PRJ_SUFFIX
 
   sleep 2
 
