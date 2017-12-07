@@ -140,7 +140,10 @@ function deploy() {
 
   sleep 2
 
-  oc import-image jenkins --from="registry.access.redhat.com/openshift3/jenkins-2-rhel7" --confirm --all -n openshift
+  oc import-image jenkins:v3.7 --from="registry.access.redhat.com/openshift3/jenkins-2-rhel7" --confirm -n openshift 2>/dev/null
+
+  sleep 10
+
   oc new-app jenkins-ephemeral --param=JENKINS_IMAGE_STREAM_TAG=v3.7 -n cicd-$PRJ_SUFFIX
 
   sleep 2
