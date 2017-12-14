@@ -169,8 +169,13 @@ objects:
                     openshift.withCluster() {
                       openshift.withProject(env.DEV_PROJECT) {
                         def app = openshift.newApp("tasks:latest")
-                        openshift.set("triggers", "dc/tasks", "--remove-all")
                         app.narrow("svc").expose();
+
+                        def dc = openshift.selector("dc", "tasks")
+                        while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
+                            sleep 10
+                        }
+                        openshift.set("triggers", "dc/tasks", "--remove-all")
                       }
                     }
                   }
