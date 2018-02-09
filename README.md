@@ -29,7 +29,7 @@ If you have access to RHPDS, provisioning of this demo is automated via the serv
 # Setup on OpenShift (Script)
 Instead of the above, you can also use the `scripts/provision.sh` script provided which does the exact steps as described above.
 
-OpenShift 3.7 by default uses an older version of Jenkins. Import all Jenkins image tags in order to use the newer Jenkins image 
+OpenShift 3.7 by default uses an older version of Jenkins. Import all Jenkins image tags in order to use the newer Jenkins image
 for this demo:
   ```
   oc login -u system:admin
@@ -42,7 +42,7 @@ And then provision the demo:
   ./provision.sh deploy --with-sonar --ephemeral
   ./provision.sh delete
   ```
-  
+
 # Setup on OpenShift (Manual)
 Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
@@ -56,14 +56,16 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
   ```
-OpenShift 3.7 by default uses an older version of Jenkins. Import all Jenkins image tags in order to use the newer Jenkins image 
+OpenShift 3.7 by default uses an older version of Jenkins. Import all Jenkins image tags in order to use the newer Jenkins image
 for this demo:
   ```
   oc login -u system:admin
   oc import-image jenkins --from="registry.access.redhat.com/openshift3/jenkins-2-rhel7" --confirm --all -n openshift
+  oc project openshift
+  oc tag jenkins:v3.7 jenkins:latest
   ```
-  
-You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins 
+
+You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins
 and generated reports within the Jenkins:
 
   ```
@@ -124,7 +126,7 @@ your own names and use the following to create the demo:
   oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift
   ```
 
-* If you get this maven error during the static analysis, you are running out of memory and need more memory for OpenShift: 
+* If you get this maven error during the static analysis, you are running out of memory and need more memory for OpenShift:
   ```
   [Static Analysis] /opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed
-  ``` 
+  ```
