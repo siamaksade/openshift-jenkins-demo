@@ -3,21 +3,19 @@
 # CICD Demo
 # https://github.com/OpenShiftDemos/openshift-cd-demo
 #
-# you need to be loged in with oc for this to work
+# you need to be system:admin in with oc for this to work
+#
 #
 TEMPLATEPATH="."
 
 # incorporate OpenShift user name into the project
 USER=$(oc whoami)
 # throw an error if you are not logged in
-test -z "$USER" && { echo "please login to oc with your USERNAME - aborting $0" ; exit ; }
+test "$USER" -ne "system:admin" && { echo "You need to be system:admin - aborting $0" ; exit ; }
 
-# shorten to admin / last part of names with :
-if ( echo $USER | grep -q ':' ); then USER=$( echo $USER | cut -d : -f 2 ); fi
-
-DEVP="cicd-dev-$USER"
-STAGEP="cicd-stage-$USER"
-MGMTP="cicd-mgmt-$USER"
+DEVP="cicd-dev"
+STAGEP="cicd-stage"
+MGMTP="cicd-mgmt"
 
 echo "CLEANING UP FIRST - delete existing projects"
 # cleanup before start
