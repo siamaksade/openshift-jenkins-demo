@@ -7,8 +7,13 @@
 #
 TEMPLATEPATH="."
 
+# incorporate OpenShift user name into the project
 USER=$(oc whoami)
+# throw an error if you are not logged in
 test -z "$USER" && { echo "please login to oc with your USERNAME - aborting $0" ; exit ; }
+
+# shorten to admin / last part of names with :
+if ( echo $USER | grep -q ':' ); then USER=$( echo $USER | cut -d : -f 2 ); fi
 
 DEVP="cicd-dev-$USER"
 STAGEP="cicd-stage-$USER"
