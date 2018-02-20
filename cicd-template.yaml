@@ -175,7 +175,7 @@ objects:
                         while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
                             sleep 10
                         }
-                        openshift.set("triggers", "dc/tasks", "--remove-all")
+                        openshift.set("triggers", "dc/tasks", "--manual")
                       }
                     }
                   }
