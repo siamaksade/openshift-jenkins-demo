@@ -17,8 +17,8 @@ function usage() {
     echo "COMMANDS:"
     echo "   deploy                   Set up the demo projects and deploy demo apps"
     echo "   delete                   Clean up and remove demo projects and objects"
-    echo "   idle                     Make all demo servies idle"
-    echo "   unidle                   Make all demo servies unidle"
+    echo "   idle                     Make all demo services idle"
+    echo "   unidle                   Make all demo services unidle"
     echo 
     echo "OPTIONS:"
     echo "   --user [username]         The admin user for the demo projects. mandatory if logged in as system:admin"
