@@ -23,8 +23,9 @@ function usage() {
     echo "OPTIONS:"
     echo "   --user [username]         The admin user for the demo projects. mandatory if logged in as system:admin"
     echo "   --project-suffix [suffix] Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
-    echo "   --ephemeral               Deploy demo without persistent storage"
-    echo "   --use-sonar               Use SonarQube for static code analysis instead of CheckStyle,FindBug,etc"
+    echo "   --ephemeral               Deploy demo without persistent storage. Default false"
+    echo "   --deploy-sonar            Deploy SonarQube for static code analysis instead of CheckStyle,FindBug,etc. Default false"
+    echo "   --deploy-che              Deploy Eclipse Che as an online IDE for code changes. Default false"
     echo "   --oc-options              oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
 }
@@ -34,7 +35,8 @@ ARG_PROJECT_SUFFIX=
 ARG_COMMAND=
 ARG_EPHEMERAL=false
 ARG_OC_OPS=
-ARG_WITH_SONAR=false
+ARG_DEPLOY_SONAR=false
+ARG_DEPLOY_CHE=false
 
 while :; do
     case $1 in
@@ -84,7 +86,11 @@ while :; do
             ARG_EPHEMERAL=true
             ;;
         --use-sonar)
-            ARG_WITH_SONAR=true
+        --deploy-sonar)
+            ARG_DEPLOY_SONAR=true
+            ;;
+        --deploy-chec)
+            ARG_DEPLOY_CHE=true
             ;;
         -h|--help)
             usage
@@ -145,16 +151,13 @@ function deploy() {
   sleep 5
 
   oc tag jenkins:v3.7 jenkins:latest -n openshift
-
-  sleep 10
-
   oc new-app jenkins-ephemeral -n cicd-$PRJ_SUFFIX
 
   sleep 2
 
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
-  oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_SONAR=$ARG_WITH_SONAR --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
+  oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_SONAR=$ARG_DEPLOY_SONAR --param=WITH_CHE=$ARG_DEPLOY_CHE --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
 }
 
 function make_idle() {

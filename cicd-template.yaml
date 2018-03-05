@@ -23,6 +23,11 @@ parameters:
   value: "true"
   name: WITH_SONAR
   required: true
+- displayName: Deploy Eclipse Che
+  description: Deploy Eclipse Che in order to use as an online IDE for changing code in this demo
+  value: "false"
+  name: WITH_CHE
+  required: true
 - displayName: Ephemeral
   description: Use no persistent storage for Gogs and Nexus
   value: "true"
@@ -315,6 +320,14 @@ objects:
 
             if [ "${WITH_SONAR}" == "true" ] ; then
               oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=6.7 --param=SONAR_MAX_MEMORY=4Gi
+            fi
+
+            if [ "${WITH_CHE}" == "true" ] ; then
+              oc proces -f https://raw.githubusercontent.com/minishift/minishift-addons/master/add-ons/che/templates/che-single-user.yml \
+                --param PROJECT_NAME=$CICD_NAMESPACE \
+                --param DOMAIN_NAME=$HOSTNAME \
+                --param OPENSHIFT_OAUTH_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) \
+                | oc create -f -
             fi
 
             if [ "${EPHEMERAL}" == "true" ] ; then
