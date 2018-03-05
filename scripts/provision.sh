@@ -86,10 +86,12 @@ while :; do
             ARG_EPHEMERAL=true
             ;;
         --use-sonar)
+            ARG_DEPLOY_SONAR=true
+            ;;
         --deploy-sonar)
             ARG_DEPLOY_SONAR=true
             ;;
-        --deploy-chec)
+        --deploy-che)
             ARG_DEPLOY_CHE=true
             ;;
         -h|--help)

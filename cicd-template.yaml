@@ -323,10 +323,10 @@ objects:
             fi
 
             if [ "${WITH_CHE}" == "true" ] ; then
-              oc proces -f https://raw.githubusercontent.com/minishift/minishift-addons/master/add-ons/che/templates/che-single-user.yml \
+              oc process -f https://raw.githubusercontent.com/minishift/minishift-addons/master/add-ons/che/templates/che-single-user.yml \
                 --param PROJECT_NAME=$CICD_NAMESPACE \
                 --param DOMAIN_NAME=$HOSTNAME \
-                --param OPENSHIFT_OAUTH_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) \
+                --param OPENSHIFT_OAUTH_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
                 | oc create -f -
             fi
 
