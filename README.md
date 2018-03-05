@@ -168,9 +168,20 @@ Configure you name and email to be stamped on your Git commity by going to **Pro
 
 ![](images/che-configure-git-name.png?raw=true)
 
-Follow the steps 6-10 in the above guide to edit the code in your workspace.
+Follow the steps 6-10 in the above guide to edit the code in your workspace. 
 
 ![](images/che-edit-file.png?raw=true)
+
+In order to run the unit tests within Eclipse Che, wait till all dependencies resolve first. To make sure they are resolved, run a Maven build using the commands palette icon or by clicking on **Run > Commands Palette > build**. 
+
+Make sure you run the build again, after fixing the bug in the service class.
+
+Run the unit tests in the IDE after you have corrected the issue by right clicking on the unit test class and then **Run Test > Run JUnit Test**
+
+![](images/che-run-tests.png?raw=true)
+
+![](images/che-junit-success.png?raw=true)
+
 
 Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** is UNCHECKED. The Gogs git server deployed on your OpenShift cluster, does not support neither SSH or OAuth. Therefore, you should use the **Terminal** window in Eclipse Che in order to use push the changes via http to the Gogs repository.
 
