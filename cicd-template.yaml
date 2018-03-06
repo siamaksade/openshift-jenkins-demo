@@ -319,7 +319,7 @@ objects:
             sleep 5
 
             if [ "${WITH_SONAR}" == "true" ] ; then
-              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=6.7 --param=SONAR_MAX_MEMORY=4Gi
+              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=4Gi
             fi
 
             if [ "${WITH_CHE}" == "true" ] ; then
@@ -333,7 +333,7 @@ objects:
             fi
 
             if [ "${EPHEMERAL}" == "true" ] ; then
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.8.0 --param=MAX_MEMORY=2Gi
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.7.1 --param=MAX_MEMORY=2Gi
             else
               oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.8.0 --param=MAX_MEMORY=2Gi
             fi
