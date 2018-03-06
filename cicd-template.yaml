@@ -306,12 +306,12 @@ objects:
 
             if [ "${EPHEMERAL}" == "true" ] ; then
               oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-template.yaml \
-                  --param=GOGS_VERSION=0.11.29 \
+                  --param=GOGS_VERSION=0.11.34 \
                   --param=HOSTNAME=$GOGS_HOSTNAME \
                   --param=SKIP_TLS_VERIFY=true
             else
               oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/gogs-openshift-docker/master/openshift/gogs-persistent-template.yaml \
-                  --param=GOGS_VERSION=0.11.29 \
+                  --param=GOGS_VERSION=0.11.34 \
                   --param=HOSTNAME=$GOGS_HOSTNAME \
                   --param=SKIP_TLS_VERIFY=true
             fi
@@ -333,9 +333,9 @@ objects:
             fi
 
             if [ "${EPHEMERAL}" == "true" ] ; then
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.6.1 --param=MAX_MEMORY=2Gi
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.8.0 --param=MAX_MEMORY=2Gi
             else
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.6.1 --param=MAX_MEMORY=2Gi
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.8.0 --param=MAX_MEMORY=2Gi
             fi
 
             GOGS_SVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')

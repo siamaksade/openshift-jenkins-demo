@@ -61,14 +61,7 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
   # Grant Jenkins Access to Projects
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
   oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
-  ```
-OpenShift 3.7 by default uses an older version of Jenkins. Import a newer Jenkins image in order to use with this demo:
-  ```
-  oc login -u system:admin
-  oc import-image jenkins:v3.7 --from="registry.access.redhat.com/openshift3/jenkins-2-rhel7" --confirm -n openshift
-  oc tag jenkins:v3.7 jenkins:latest -n openshift
-  ```
-  
+  ```  
 You can choose to use either SonarQube for static code and security analysis or instead use Maven plugins 
 and generated reports within the Jenkins:
 
