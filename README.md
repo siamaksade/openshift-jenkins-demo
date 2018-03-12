@@ -168,7 +168,7 @@ Configure you name and email to be stamped on your Git commity by going to **Pro
 
 ![](images/che-configure-git-name.png?raw=true)
 
-Follow the steps 6-10 in the above guide to edit the code in your workspace. 
+Follow the steps 6-10 in the above guide (excluding steps to push code to Git) to edit the code in your workspace. Then continue to follow the steps below.
 
 ![](images/che-edit-file.png?raw=true)
 
