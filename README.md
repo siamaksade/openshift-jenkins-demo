@@ -7,8 +7,8 @@ This repository includes the infrastructure and pipeline definition for continuo
 * [Introduction](#introduction)
 * [Prerequisites](#prerequisites)
 * [Deploy on RHPDS](#deploy-on-rhpds)
-* [Deploy on OpenShift (script)](#deploy-on-openshift-script)
-* [Deploy on OpenShift (manual)](#deploy-on-openshift-manual)
+* [Automated Deploy on OpenShift](#automatic-deploy-on-openshift)
+* [Manual Deploy on OpenShift](#manual-deploy-on-openshift)
 * [Troubleshooting](#troubleshooting)
 * [Demo Guide](#demo-guide)
 * [Using Eclipse Che for Editing Code](#using-eclipse-che-for-editing-code)
@@ -40,7 +40,7 @@ The application used in this pipeline is a JAX-RS application which is available
 
 If you have access to RHPDS, provisioning of this demo is automated via the service catalog under **OpenShift Demos &rarr; OpenShift CI/CD for Monolith**. If you don't know what RHPDS is, read the instructions in the next section.
 
-## Deploy on OpenShift (Script)
+## Automated Deploy on OpenShift
 You can se the `scripts/provision.sh` script provided to deploy the entire demo:
 
   ```
@@ -49,7 +49,7 @@ You can se the `scripts/provision.sh` script provided to deploy the entire demo:
   ./provision.sh delete 
   ```
   
-## Deploy on OpenShift (Manual)
+## Manual Deploy on OpenShift
 Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
   ```shell
