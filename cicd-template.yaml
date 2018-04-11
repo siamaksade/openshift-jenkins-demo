@@ -298,7 +298,7 @@ objects:
           - -c
           - |
             oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
-            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.92,findbugs:4.71,pmd:3.49,checkstyle:3.49,dependency-check-jenkins-plugin:2.1.1,htmlpublisher:1.14,jacoco:2.2.1,analysis-collector:1.52,pipeline-utility-steps:1.5.1 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true
+            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.95,findbugs:4.72,pmd:3.50,checkstyle:3.50,dependency-check-jenkins-plugin:3.1.2,htmlpublisher:1.15,jacoco:3.0.1,analysis-collector:1.52,pipeline-utility-steps:2.0.2 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true
             oc label dc jenkins app=jenkins --overwrite 
 
             HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
