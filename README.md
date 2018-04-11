@@ -33,7 +33,7 @@ The application used in this pipeline is a JAX-RS application which is available
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
 ## Prerequisites
-* 8+ GB memory for OpenShift (10+ GB memory if using SonarQube)
+* 10+ GB memory
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 ## Deploy on RHPDS
@@ -45,7 +45,7 @@ You can se the `scripts/provision.sh` script provided to deploy the entire demo:
 
   ```
   ./provision.sh --help
-  ./provision.sh deploy --deploy-sonar --deploy-che --ephemeral
+  ./provision.sh deploy --deploy-che --ephemeral
   ./provision.sh delete 
   ```
   
@@ -73,13 +73,10 @@ You can choose to use either SonarQube for static code and security analysis or 
 and generated reports within the Jenkins:
 
   ```
-  # Deploy Pipeline with SonarQube
+  # Deploy Demo
   oc new-app -n cicd -f cicd-template.yaml
 
-  # Deploy Pipeline without SonarQube
-  oc new-app -n cicd -f cicd-template.yaml --param=WITH_SONAR=false
-
-  # Deploy Pipeline woth Eclipse Che
+  # Deploy Demo woth Eclipse Che
   oc new-app -n cicd -f cicd-template.yaml --param=WITH_CHE=true
   ```
 
@@ -115,11 +112,10 @@ your own names and use the following to create the demo:
 
 5. After pipeline completion, demonstrate the following:
   * Explore the _snapshots_ repository in Nexus and verify _openshift-tasks_ is pushed to the repository
-  * Explore SonarQube or pipeline in Jenkins and show the metrics, stats, code coverage, etc
+  * Explore SonarQube and show the metrics, stats, code coverage, etc
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
   * Explore _Tasks - Stage_ project in OpenShift console and verify the application is deployed in the STAGE environment  
 
-![](images/jenkins-analysis.png?raw=true)
 ![](images/sonarqube-analysis.png?raw=true)
 
 6. Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
