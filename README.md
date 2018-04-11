@@ -179,16 +179,9 @@ Run the unit tests in the IDE after you have corrected the issue by right clicki
 ![](images/che-junit-success.png?raw=true)
 
 
-Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** is UNCHECKED. The Gogs git server deployed on your OpenShift cluster, does not support neither SSH or OAuth. Therefore, you should use the **Terminal** window in Eclipse Che in order to use push the changes via http to the Gogs repository.
+Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** UNCHECKED. Click on **Commit** button.
 
 ![](images/che-commit.png?raw=true)
 
-Click on the **Terminal** window and push the changes to the upstream repository:
-```
-cd openshift-tasks
-git push origin eap-7
-```
-
-Enter `gogs/gogs` as username and password.
-
-![](images/che-git-push.png?raw=true)
+As soon the changes are committed to the git repository, a new instances of pipeline gets triggers to test and deploy the 
+code changes.
