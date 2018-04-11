@@ -18,11 +18,6 @@ parameters:
   value: stage
   name: STAGE_PROJECT
   required: true
-- displayName: Deploy SonarQube
-  description: If SonarQube should be deployed and used in the pipeline. Set to false to preserve resources.
-  value: "true"
-  name: WITH_SONAR
-  required: true
 - displayName: Deploy Eclipse Che
   description: Deploy Eclipse Che in order to use as an online IDE for changing code in this demo
   value: "false"
@@ -77,8 +72,6 @@ objects:
           value: ${DEV_PROJECT}
         - name: STAGE_PROJECT
           value: ${STAGE_PROJECT}
-        - name: WITH_SONAR
-          value: ${WITH_SONAR}
         jenkinsfile: |-
           def version, mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
 
@@ -106,17 +99,7 @@ objects:
               stage('Code Analysis') {
                 steps {
                   script {
-                    if (env.WITH_SONAR.toBoolean()) {
-                      sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
-                    } else {
-                      sh "${mvnCmd} site -DskipTests=true"
-                      
-                      step([$class: 'CheckStylePublisher', unstableTotalAll:'300'])
-                      step([$class: 'PmdPublisher', unstableTotalAll:'20'])
-                      step([$class: 'FindBugsPublisher', pattern: '**/findbugsXml.xml', unstableTotalAll:'20'])
-                      step([$class: 'JacocoPublisher'])
-                      publishHTML (target: [keepAll: true, reportDir: 'target/site', reportFiles: 'project-info.html', reportName: "Site Report"])
-                    }
+                    sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
                   }
                 }
               }
@@ -298,7 +281,6 @@ objects:
           - -c
           - |
             oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
-            oc set env dc/jenkins INSTALL_PLUGINS=analysis-core:1.95,findbugs:4.72,pmd:3.50,checkstyle:3.50,dependency-check-jenkins-plugin:3.1.2,htmlpublisher:1.15,jacoco:3.0.1,analysis-collector:1.52,pipeline-utility-steps:2.0.2 OVERRIDE_PV_PLUGINS_WITH_IMAGE_PLUGINS=true
             oc label dc jenkins app=jenkins --overwrite 
 
             HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
@@ -318,9 +300,7 @@ objects:
             
             sleep 5
 
-            if [ "${WITH_SONAR}" == "true" ] ; then
-              oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=4Gi
-            fi
+            oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=4Gi
 
             if [ "${WITH_CHE}" == "true" ] ; then
               oc process -f https://raw.githubusercontent.com/minishift/minishift-addons/master/add-ons/che/templates/che-single-user.yml \
