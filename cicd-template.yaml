@@ -285,7 +285,7 @@ objects:
           - -x
           - -c
           - |
-            oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
+            oc set resources dc/jenkins --limits=cpu=1,memory=2Gi --requests=cpu=100m,memory=512Mi 
             oc label dc jenkins app=jenkins --overwrite 
 
             HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
