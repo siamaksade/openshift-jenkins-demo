@@ -1,6 +1,6 @@
-*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.9, ocp-3.7, etc
+*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.10, ocp-3.9, etc
 
-# CI/CD Demo - OpenShift Container Platform 3.9
+# CI/CD Demo - OpenShift Container Platform 3.10
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus, SonarQube and Eclipse Che on OpenShift. 
 
@@ -176,7 +176,7 @@ Run the unit tests in the IDE after you have corrected the issue by right clicki
 ![](images/che-junit-success.png?raw=true)
 
 
-Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** is checked. Click on **Commit** button.
+Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push committed changes to ...** is checked. Click on **Commit** button.
 
 ![](images/che-commit.png?raw=true)
 
