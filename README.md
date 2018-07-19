@@ -76,7 +76,11 @@ and generated reports within the Jenkins:
   # Deploy Demo
   oc new-app -n cicd -f cicd-template.yaml
 
-  # Deploy Demo woth Eclipse Che
+  # Deploy Pipeline without SonarQube
+  oc new-app -n cicd -f cicd-template.yaml --param=WITH_SONAR=false
+
+  # Deploy Pipeline with Eclipse Che
+
   oc new-app -n cicd -f cicd-template.yaml --param=WITH_CHE=true
   ```
 
