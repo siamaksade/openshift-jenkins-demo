@@ -69,7 +69,7 @@ And then deploy the demo:
   # Deploy Demo
   oc new-app -n cicd -f cicd-template.yaml
 
-  # Deploy Demo woth Eclipse Che
+  # Deploy Demo with Eclipse Che
   oc new-app -n cicd -f cicd-template.yaml --param=WITH_CHE=true
   ```
 
