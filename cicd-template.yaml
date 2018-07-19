@@ -159,6 +159,9 @@ objects:
                         def app = openshift.newApp("tasks:latest")
                         app.narrow("svc").expose();
 
+                        openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                        openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
+
                         def dc = openshift.selector("dc", "tasks")
                         while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
                             sleep 10
@@ -205,6 +208,8 @@ objects:
                         }
 
                         openshift.newApp("tasks:${version}").narrow("svc").expose()
+                        openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                        openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
                       }
                     }
                   }
@@ -280,7 +285,7 @@ objects:
           - -x
           - -c
           - |
-            oc set resources dc/jenkins --limits=memory=1Gi --requests=memory=512Mi 
+            oc set resources dc/jenkins --limits=cpu=2,memory=2Gi --requests=cpu=100m,memory=512Mi 
             oc label dc jenkins app=jenkins --overwrite 
 
             HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
@@ -300,7 +305,7 @@ objects:
             
             sleep 5
 
-            oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=4Gi
+            oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=6Gi
 
             if [ "${WITH_CHE}" == "true" ] ; then
               oc process -f https://raw.githubusercontent.com/minishift/minishift-addons/master/add-ons/che/templates/che-single-user.yml \

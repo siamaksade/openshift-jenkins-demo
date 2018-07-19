@@ -84,26 +84,34 @@ your own names and use the following to create the demo:
 ## Troubleshooting
 
 * If pipeline execution fails with ```error: no match for "jboss-eap70-openshift"```, import the jboss imagestreams in OpenShift.
+
   ```
-  oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/eap/eap70-image-stream.json -n openshift
+  oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-v1.4.14/eap/eap70-image-stream.json -n openshift
   ```
 * If Maven fails with `/opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed` (e.g. during static analysis), you are running out of memory and need more memory for OpenShift.
 
 ## Demo Guide
 
-1. A Jenkins pipeline is pre-configured which clones Tasks application source code from Gogs (running on OpenShift), builds, deploys and promotes the result through the deployment pipeline. In the CI/CD project, click on _Builds_ and then _Pipelines_ to see the list of defined pipelines.
+
+* Take note of these credentials and then follow the demo guide below:
+
+  * Gogs: `gogs/gogs`
+  * Nexus: `admin/admin123`
+  * SonarQube: `admin/admin`
+
+* A Jenkins pipeline is pre-configured which clones Tasks application source code from Gogs (running on OpenShift), builds, deploys and promotes the result through the deployment pipeline. In the CI/CD project, click on _Builds_ and then _Pipelines_ to see the list of defined pipelines.
 
     Click on _tasks-pipeline_ and _Configuration_ and explore the pipeline definition.
 
     You can also explore the pipeline job in Jenkins by clicking on the Jenkins route url, logging in with the OpenShift credentials and clicking on _tasks-pipeline_ and _Configure_.
 
-2. Run an instance of the pipeline by starting the _tasks-pipeline_ in OpenShift or Jenkins.
+* Run an instance of the pipeline by starting the _tasks-pipeline_ in OpenShift or Jenkins.
 
-3. During pipeline execution, verify a new Jenkins slave pod is created within _CI/CD_ project to execute the pipeline.
+* During pipeline execution, verify a new Jenkins slave pod is created within _CI/CD_ project to execute the pipeline.
 
-4. Pipelines pauses at _Deploy STAGE_ for approval in order to promote the build to the STAGE environment. Click on this step on the pipeline and then _Promote_.
+* Pipelines pauses at _Deploy STAGE_ for approval in order to promote the build to the STAGE environment. Click on this step on the pipeline and then _Promote_.
 
-5. After pipeline completion, demonstrate the following:
+* After pipeline completion, demonstrate the following:
   * Explore the _snapshots_ repository in Nexus and verify _openshift-tasks_ is pushed to the repository
   * Explore SonarQube and show the metrics, stats, code coverage, etc
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
@@ -111,20 +119,19 @@ your own names and use the following to create the demo:
 
 ![](images/sonarqube-analysis.png?raw=true)
 
-6. Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
+* Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
 
-7. Check out Jenkins, a pipeline instance is created and is being executed. The pipeline will fail during unit tests due to the enabled unit test.
+* Check out Jenkins, a pipeline instance is created and is being executed. The pipeline will fail during unit tests due to the enabled unit test.
 
-8. Check out the failed unit and test ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` and run it in the IDE.
+* Check out the failed unit and test ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` and run it in the IDE.
 
-9. Fix the test by modifying ```src/main/java/org/jboss/as/quickstarts/tasksrs/service/UserResource.java``` and uncommenting the sort function in _getUsers_ method.
+* Fix the test by modifying ```src/main/java/org/jboss/as/quickstarts/tasksrs/service/UserResource.java``` and uncommenting the sort function in _getUsers_ method.
 
-10. Run the unit test in the IDE. The unit test runs green. 
+* Run the unit test in the IDE. The unit test runs green. 
 
-11. Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
+* Commit and push the fix to the git repository and verify a pipeline instance is created in Jenkins and executes successfully.
 
 ![](images/openshift-pipeline.png?raw=true)
-
 
 ## Using Eclipse Che for Editing Code
 
@@ -145,7 +152,11 @@ It might take a little while before your workspace is set up and ready to be use
 
 ![](images/che-import-project.png?raw=true)
 
-Enter the Gogs repository HTTPS url for `openshift-tasks` as the Git repository url. You can find the repository url in Gogs web console. Make sure the check the **Branch** field and enter `eap-7` in order to clone the `eap-7` branch which is used in this demo. Click on **Import**
+Enter the Gogs repository HTTPS url for `openshift-tasks` as the Git repository url with Git username and password in the 
+url: <br/>
+`http://gogs:gogs@[gogs-hostname]/gogs/openshift-tasks.git`
+
+ You can find the repository url in Gogs web console. Make sure the check the **Branch** field and enter `eap-7` in order to clone the `eap-7` branch which is used in this demo. Click on **Import**
 
 ![](images/che-import-git.png?raw=true)
 
@@ -172,7 +183,7 @@ Run the unit tests in the IDE after you have corrected the issue by right clicki
 ![](images/che-junit-success.png?raw=true)
 
 
-Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** UNCHECKED. Click on **Commit** button.
+Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** is checked. Click on **Commit** button.
 
 ![](images/che-commit.png?raw=true)
 
