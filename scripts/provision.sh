@@ -24,7 +24,6 @@ function usage() {
     echo "   --user [username]         The admin user for the demo projects. mandatory if logged in as system:admin"
     echo "   --project-suffix [suffix] Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
     echo "   --ephemeral               Deploy demo without persistent storage. Default false"
-    echo "   --deploy-sonar            Deploy SonarQube for static code analysis instead of CheckStyle,FindBug,etc. Default false"
     echo "   --deploy-che              Deploy Eclipse Che as an online IDE for code changes. Default false"
     echo "   --oc-options              oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
@@ -35,7 +34,6 @@ ARG_PROJECT_SUFFIX=
 ARG_COMMAND=
 ARG_EPHEMERAL=false
 ARG_OC_OPS=
-ARG_DEPLOY_SONAR=false
 ARG_DEPLOY_CHE=false
 
 while :; do
@@ -84,12 +82,6 @@ while :; do
             ;;
         --ephemeral)
             ARG_EPHEMERAL=true
-            ;;
-        --use-sonar)
-            ARG_DEPLOY_SONAR=true
-            ;;
-        --deploy-sonar)
-            ARG_DEPLOY_SONAR=true
             ;;
         --deploy-che)
             ARG_DEPLOY_CHE=true
@@ -159,7 +151,7 @@ function deploy() {
 
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
-  oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_SONAR=$ARG_DEPLOY_SONAR --param=WITH_CHE=$ARG_DEPLOY_CHE --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
+  oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_CHE=$ARG_DEPLOY_CHE --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
 }
 
 function make_idle() {

@@ -33,7 +33,7 @@ The application used in this pipeline is a JAX-RS application which is available
 [https://github.com/OpenShiftDemos/openshift-tasks](https://github.com/OpenShiftDemos/openshift-tasks/tree/eap-7)
 
 ## Prerequisites
-* 8+ GB memory for OpenShift (10+ GB memory if using SonarQube)
+* 10+ GB memory
 * JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 ## Deploy on RHPDS
@@ -45,7 +45,7 @@ You can se the `scripts/provision.sh` script provided to deploy the entire demo:
 
   ```
   ./provision.sh --help
-  ./provision.sh deploy --deploy-sonar --deploy-che --ephemeral
+  ./provision.sh deploy --deploy-che --ephemeral
   ./provision.sh delete 
   ```
   
@@ -73,13 +73,14 @@ You can choose to use either SonarQube for static code and security analysis or 
 and generated reports within the Jenkins:
 
   ```
-  # Deploy Pipeline with SonarQube
+  # Deploy Demo
   oc new-app -n cicd -f cicd-template.yaml
 
   # Deploy Pipeline without SonarQube
   oc new-app -n cicd -f cicd-template.yaml --param=WITH_SONAR=false
 
   # Deploy Pipeline with Eclipse Che
+
   oc new-app -n cicd -f cicd-template.yaml --param=WITH_CHE=true
   ```
 
@@ -95,7 +96,7 @@ your own names and use the following to create the demo:
 
 * If pipeline execution fails with ```error: no match for "jboss-eap70-openshift"```, import the jboss imagestreams in OpenShift.
   ```
-  oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/jboss-image-streams.json -n openshift
+  oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-v1.4.12/eap/eap70-image-stream.json -n openshift
   ```
 * If Maven fails with `/opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed` (e.g. during static analysis), you are running out of memory and need more memory for OpenShift.
 
@@ -115,11 +116,10 @@ your own names and use the following to create the demo:
 
 5. After pipeline completion, demonstrate the following:
   * Explore the _snapshots_ repository in Nexus and verify _openshift-tasks_ is pushed to the repository
-  * Explore SonarQube or pipeline in Jenkins and show the metrics, stats, code coverage, etc
+  * Explore SonarQube and show the metrics, stats, code coverage, etc
   * Explore _Tasks - Dev_ project in OpenShift console and verify the application is deployed in the DEV environment
   * Explore _Tasks - Stage_ project in OpenShift console and verify the application is deployed in the STAGE environment  
 
-![](images/jenkins-analysis.png?raw=true)
 ![](images/sonarqube-analysis.png?raw=true)
 
 6. Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
@@ -156,7 +156,11 @@ It might take a little while before your workspace is set up and ready to be use
 
 ![](images/che-import-project.png?raw=true)
 
-Enter the Gogs repository HTTPS url for `openshift-tasks` as the Git repository url. You can find the repository url in Gogs web console. Make sure the check the **Branch** field and enter `eap-7` in order to clone the `eap-7` branch which is used in this demo. Click on **Import**
+Enter the Gogs repository HTTPS url for `openshift-tasks` as the Git repository url with Git username and password in the 
+url: <br/>
+`http://gogs:gogs@[gogs-hostname]/gogs/openshift-tasks.git`
+
+ You can find the repository url in Gogs web console. Make sure the check the **Branch** field and enter `eap-7` in order to clone the `eap-7` branch which is used in this demo. Click on **Import**
 
 ![](images/che-import-git.png?raw=true)
 
@@ -183,16 +187,9 @@ Run the unit tests in the IDE after you have corrected the issue by right clicki
 ![](images/che-junit-success.png?raw=true)
 
 
-Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** is UNCHECKED. The Gogs git server deployed on your OpenShift cluster, does not support neither SSH or OAuth. Therefore, you should use the **Terminal** window in Eclipse Che in order to use push the changes via http to the Gogs repository.
+Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push commited changes to ...** is checked. Click on **Commit** button.
 
 ![](images/che-commit.png?raw=true)
 
-Click on the **Terminal** window and push the changes to the upstream repository:
-```
-cd openshift-tasks
-git push origin eap-7
-```
-
-Enter `gogs/gogs` as username and password.
-
-![](images/che-git-push.png?raw=true)
+As soon the changes are committed to the git repository, a new instances of pipeline gets triggers to test and deploy the 
+code changes.
