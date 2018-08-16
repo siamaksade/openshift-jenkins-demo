@@ -308,7 +308,7 @@ objects:
             oc new-app -f http://bit.ly/openshift-sonarqube-embedded-template --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=6Gi
 
             if [ "${WITH_CHE}" == "true" ] ; then
-              oc process -f https://raw.githubusercontent.com/minishift/minishift-addons/master/add-ons/che/templates/che-single-user.yml \
+              oc process -f https://raw.githubusercontent.com/minishift/minishift/master/addons/che/templates/che-single-user.yml \
                 --param PROJECT_NAME=$CICD_NAMESPACE \
                 --param DOMAIN_NAME=$HOSTNAME \
                 --param OPENSHIFT_OAUTH_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
