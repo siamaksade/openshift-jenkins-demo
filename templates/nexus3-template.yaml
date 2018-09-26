@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: nexus3-template
+metadata:
+  name: nexus3
+  annotations:
+    description: Sonatype Nexus 3 template
+    tags: ci,nexus
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${SERVICE_NAME}
+    name: ${SERVICE_NAME}
+  spec:
+    tags:
+    - from:
+        kind: DockerImage
+        name: docker.io/sonatype/nexus3:${NEXUS_VERSION}
+      name: ${NEXUS_VERSION}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${SERVICE_NAME}
+    name: ${SERVICE_NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${SERVICE_NAME}
+    strategy:
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 0
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+        post:
+          failurePolicy: Abort
+          execNewPod:
+            containerName: ${SERVICE_NAME}
+            command:
+              - "/bin/bash"
+              - "-c"
+              - "curl -o /tmp/nexus-functions -s https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/scripts/nexus-functions; source /tmp/nexus-functions; add_nexus3_redhat_repos admin admin123 http://${SERVICE_NAME}:8081"
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          deploymentconfig: ${SERVICE_NAME}
+      spec:
+        containers:
+        - env:
+          - name: CONTEXT_PATH
+            value: /
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+              - echo
+              - ok
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: ${SERVICE_NAME}
+          ports:
+          - containerPort: 8081
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: ${MAX_MEMORY}
+            requests:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /nexus-data
+            name: ${SERVICE_NAME}-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: ${SERVICE_NAME}-data
+          emptyDir: {}
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${SERVICE_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${SERVICE_NAME}:${NEXUS_VERSION}
+      type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${SERVICE_NAME}
+    name: ${SERVICE_NAME}
+  spec:
+    ports:
+    - name: 8081-tcp
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    selector:
+      deploymentconfig: ${SERVICE_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: ${SERVICE_NAME}
+    name: ${SERVICE_NAME}
+  spec:
+    port:
+      targetPort: 8081-tcp
+    to:
+      kind: Service
+      name: ${SERVICE_NAME}
+      weight: 100
+parameters:
+- displayName: Sonatype Nexus Service Name
+  name: SERVICE_NAME
+  required: true
+  value: nexus
+- displayName: Sonatype Nexus version
+  name: NEXUS_VERSION
+  required: true
+  value: 3.6.0
+- description: Max memory allocated to the Nexus pod
+  displayName: Max Memory
+  name: MAX_MEMORY
+  required: true
+  value: 1Gi

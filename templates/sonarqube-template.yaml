@@ -1,0 +1,162 @@
+kind: Template
+apiVersion: v1
+metadata:
+  annotations:
+    description: The SonarQube OpenShift template
+    tags: instant-app,sonarqube
+  name: sonarqube
+message: "Login to SonarQube with the default admin user: admin/admin"
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: sonarqube
+    labels:
+      app: sonarqube
+  spec:
+    ports:
+    - name: sonarqube
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    selector:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      description: Route for SonarQube's http service.
+    name: sonarqube
+    labels:
+      app: sonarqube
+  spec:
+    to:
+      kind: Service
+      name: sonarqube
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: sonarqube
+    name: sonarqube
+  spec:
+    tags:
+    - annotations:
+        description: The SonarQube Docker image
+        tags: sonarqube
+      from:
+        kind: DockerImage
+        name: openshiftdemos/sonarqube:${SONARQUBE_VERSION}
+      importPolicy: {}
+      name: ${SONARQUBE_VERSION}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    name: sonarqube
+  spec:
+    replicas: 1
+    selector:
+      app: sonarqube
+      deploymentconfig: sonarqube
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/container.sonarqube.image.entrypoint: '["./bin/run.sh"]'
+        creationTimestamp: null
+        labels:
+          app: sonarqube
+          deploymentconfig: sonarqube
+      spec:
+        containers:
+        - image: ' '
+          imagePullPolicy: IfNotPresent
+          name: sonarqube
+          ports:
+          - containerPort: 9000
+            protocol: TCP
+          livenessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 180
+            periodSeconds: 20
+            successThreshold: 1
+            httpGet:
+              port: 9000
+              path: /
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            successThreshold: 1
+            httpGet:
+              port: 9000
+              path: /
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              cpu: 1
+              memory: ${SONAR_MAX_MEMORY}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /opt/sonarqube/data
+            name: sonarqube-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: sonarqube-data
+          persistentVolumeClaim:
+            claimName: sonarqube-data
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - sonarqube
+        from:
+          kind: ImageStreamTag
+          name: sonarqube:${SONARQUBE_VERSION}
+      type: ImageChange
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: sonarqube-data
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${SONAR_VOLUME_CAPACITY}
+parameters:
+- displayName: SonarQube version
+  value: "6.7"
+  name: SONARQUBE_VERSION
+  required: true
+- description: Volume space available for SonarQube
+  displayName: SonarQube Volume Capacity
+  name: SONAR_VOLUME_CAPACITY
+  required: true
+  value: 1Gi
+- displayName: SonarQube Max Memory
+  name: SONAR_MAX_MEMORY
+  required: true
+  value: 2Gi
