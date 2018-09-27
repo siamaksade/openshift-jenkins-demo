@@ -48,7 +48,7 @@ objects:
           deploymentconfig: ${SERVICE_NAME}
       spec:
         containers:
-        - env:
+          - env:
           - name: CONTEXT_PATH
             value: /
           image: ' '
@@ -87,6 +87,8 @@ objects:
           - mountPath: /nexus-data
             name: ${SERVICE_NAME}-data
         dnsPolicy: ClusterFirst
+        nodeSelector:
+          region: ${NODE_SELECTOR}
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
@@ -153,8 +155,12 @@ parameters:
   value: nexus
 - displayName: Sonatype Nexus version
   name: NEXUS_VERSION
-  required: true
+  required: true${NODE_SELECTOR}infra
   value: 3.6.0
+- displayName: Pod Node Selector
+  name: NODE_SELECTOR
+  required: true
+  value: compute
 - description: Volume space available for Sonatype Nexus e.g. 512Mi, 2Gi
   displayName: Volume Space for Nexus
   name: VOLUME_CAPACITY

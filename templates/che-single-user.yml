@@ -38,6 +38,20 @@ parameters:
     description: GitHub client secret
     name: GITHUB_CLIENT_SECRET
     value: ""
+  - displayName: Pod Node Selector
+    name: NODE_SELECTOR
+    required: true
+    value: compute
+  - description: Volume space available e.g. 2Gi, 10Gi
+    displayName: Volume Space for Che
+    name: DATA_VOLUME_CAPACITY
+    required: true
+    value: 2Gi
+  - description: Volume space available e.g. 1Gi, 2Gi
+    displayName: Volume Space for Che
+    name: WORKSPACE_VOLUME_CAPACITY
+    required: true
+    value: 1Gi
 objects:
   - apiVersion: v1
     kind: RoleBinding
@@ -79,7 +93,7 @@ objects:
       - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: ${DATA_VOLUME_CAPACITY}
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
@@ -91,7 +105,7 @@ objects:
       - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: ${WORKSPACE_VOLUME_CAPACITY}
   - apiVersion: v1
     kind: ConfigMap
     metadata:
@@ -171,6 +185,8 @@ objects:
           labels:
             app: che
         spec:
+          nodeSelector:
+            region: ${NODE_SELECTOR}
           containers:
           - env:
             - name: CHE_DOCKER_IP_EXTERNAL

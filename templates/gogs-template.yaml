@@ -47,6 +47,8 @@ objects:
         name: ${APPLICATION_NAME}-postgresql
       spec:
         serviceAccountName: ${APPLICATION_NAME}
+        nodeSelector:
+          region: ${NODE_SELECTOR}
         containers:
         - env:
           - name: POSTGRESQL_USER
@@ -278,6 +280,10 @@ parameters:
 - description: 'Custom hostname for http service route.  Leave blank for default hostname, e.g.: <application-name>-<project>.<default-domain-suffix>'
   name: HOSTNAME
   required: true
+- displayName: Pod Node Selector
+  name: NODE_SELECTOR
+  required: true
+  value: compute
 - displayName: Database Username
   from: gogs
   value: gogs

@@ -91,6 +91,8 @@ objects:
           - mountPath: /nexus-data
             name: ${SERVICE_NAME}-data
         dnsPolicy: ClusterFirst
+        nodeSelector:
+          region: ${NODE_SELECTOR}
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
