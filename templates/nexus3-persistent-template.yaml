@@ -48,7 +48,7 @@ objects:
           deploymentconfig: ${SERVICE_NAME}
       spec:
         containers:
-          - env:
+        - env:
           - name: CONTEXT_PATH
             value: /
           image: ' '

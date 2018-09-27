@@ -1,0 +1,318 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: cicd
+  group: cicd
+metadata:
+  annotations:
+    iconClass: icon-jenkins
+    tags: instant-app,jenkins,gogs,nexus,cicd
+  name: cicd
+message: "Use the following credentials for login:\nJenkins: use your OpenShift credentials\nNexus: admin/admin123\nSonarQube: admin/admin\nGogs Git Server: gogs/gogs"
+parameters:
+- displayName: DEV project name
+  value: dev
+  name: DEV_PROJECT
+  required: true
+- displayName: STAGE project name
+  value: stage
+  name: STAGE_PROJECT
+  required: true
+- displayName: Deploy Eclipse Che
+  description: Deploy Eclipse Che in order to use as an online IDE for changing code in this demo
+  value: "false"
+  name: WITH_CHE
+  required: true
+- displayName: Ephemeral
+  description: Use no persistent storage for Gogs and Nexus
+  value: "true"
+  name: EPHEMERAL
+  required: true
+- description: Webhook secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: WEBHOOK_SECRET
+  required: true
+objects:
+- apiVersion: v1
+  groupNames: null
+  kind: RoleBinding
+  metadata:
+    name: default_admin
+  roleRef:
+    name: admin
+  subjects:
+  - kind: ServiceAccount
+    name: default
+# Pipeline
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
+    labels:
+      app: cicd-pipeline
+      name: cicd-pipeline
+    name: tasks-pipeline
+  spec:
+    triggers:
+      - type: GitHub
+        github:
+          secret: ${WEBHOOK_SECRET}
+      - type: Generic
+        generic:
+          secret: ${WEBHOOK_SECRET}
+    runPolicy: Serial
+    source:
+      type: None
+    strategy:
+      jenkinsPipelineStrategy:
+        env:
+        - name: DEV_PROJECT
+          value: ${DEV_PROJECT}
+        - name: STAGE_PROJECT
+          value: ${STAGE_PROJECT}
+        jenkinsfile: |-
+          def version, mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
+
+          pipeline {
+            agent {
+              label 'maven'
+            }
+            stages {
+              stage('Build App') {
+                steps {
+                  git branch: 'eap-7', url: 'https://github.com/mylisk/openshift-tasks.git'
+                  script {
+                      def pom = readMavenPom file: 'pom.xml'
+                      version = pom.version
+                  }
+                  sh "${mvnCmd} install -DskipTests=true"
+                }
+              }
+              stage('Test') {
+                steps {
+                  sh "${mvnCmd} test"
+                  step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+                }
+              }
+              stage('Code Analysis') {
+                steps {
+                  script {
+                    sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
+                  }
+                }
+              }
+              stage('Archive App') {
+                steps {
+                  sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
+                }
+              }
+              stage('Create Image Builder') {
+                when {
+                  expression {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        return !openshift.selector("bc", "tasks").exists();
+                      }
+                    }
+                  }
+                }
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        openshift.newBuild("--name=tasks", "--image-stream=jboss-eap70-openshift:1.5", "--binary=true")
+                      }
+                    }
+                  }
+                }
+              }
+              stage('Build Image') {
+                steps {
+                  sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+                  sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
+                  
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        openshift.selector("bc", "tasks").startBuild("--from-dir=oc-build", "--wait=true")
+                      }
+                    }
+                  }
+                }
+              }
+              stage('Create DEV') {
+                when {
+                  expression {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        return !openshift.selector('dc', 'tasks').exists()
+                      }
+                    }
+                  }
+                }
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        def app = openshift.newApp("tasks:latest")
+                        app.narrow("svc").expose();
+
+                        openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                        openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
+
+                        def dc = openshift.selector("dc", "tasks")
+                        while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
+                            sleep 10
+                        }
+                        openshift.set("triggers", "dc/tasks", "--manual")
+                      }
+                    }
+                  }
+                }
+              }
+              stage('Deploy DEV') {
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.DEV_PROJECT) {
+                        openshift.selector("dc", "tasks").rollout().latest();
+                      }
+                    }
+                  }
+                }
+              }
+              stage('Promote to STAGE?') {
+                steps {
+                  timeout(time:15, unit:'MINUTES') {
+                      input message: "Promote to STAGE?", ok: "Promote"
+                  }
+
+                  script {
+                    openshift.withCluster() {
+                      openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${version}")
+                    }
+                  }
+                }
+              }
+              stage('Deploy STAGE') {
+                steps {
+                  script {
+                    openshift.withCluster() {
+                      openshift.withProject(env.STAGE_PROJECT) {
+                        if (openshift.selector('dc', 'tasks').exists()) {
+                          openshift.selector('dc', 'tasks').delete()
+                          openshift.selector('svc', 'tasks').delete()
+                          openshift.selector('route', 'tasks').delete()
+                        }
+
+                        openshift.newApp("tasks:${version}").narrow("svc").expose()
+                        openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
+                        openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+      type: JenkinsPipeline
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    labels:
+      app: cicd-pipeline
+      role: jenkins-slave
+    name: jenkins-slaves
+  data:
+    maven-template: |-
+      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+        <inheritFrom></inheritFrom>
+        <name>maven</name>
+        <privileged>false</privileged>
+        <alwaysPullImage>false</alwaysPullImage>
+        <instanceCap>2147483647</instanceCap>
+        <idleMinutes>0</idleMinutes>
+        <label>maven</label>
+        <serviceAccount>jenkins</serviceAccount>
+        <nodeSelector></nodeSelector>
+        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+          <memory>false</memory>
+        </workspaceVolume>
+        <volumes />
+        <containers>
+          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+            <name>jnlp</name>
+            <image>registry.cn-shenzhen.aliyuncs.com/elead/jenkins-slave-maven-rhel7</image>
+            <privileged>false</privileged>
+            <alwaysPullImage>false</alwaysPullImage>
+            <workingDir>/tmp</workingDir>
+            <command></command>
+            <args>${computer.jnlpmac} ${computer.name}</args>
+            <ttyEnabled>false</ttyEnabled>
+            <resourceRequestCpu>200m</resourceRequestCpu>
+            <resourceRequestMemory>512Mi</resourceRequestMemory>
+            <resourceLimitCpu>2</resourceLimitCpu>
+            <resourceLimitMemory>4Gi</resourceLimitMemory>
+            <envVars/>
+          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+        </containers>
+        <envVars/>
+        <annotations/>
+        <imagePullSecrets/>
+      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+# Setup Demo
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: cicd-demo-installer
+  spec:
+    activeDeadlineSeconds: 400
+    completions: 1
+    parallelism: 1
+    template:
+      spec:
+        containers:
+        - env:
+          - name: CICD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          command:
+          - /bin/bash
+          - -x
+          - -c
+          - |
+            oc set resources dc/jenkins --limits=cpu=2,memory=2Gi --requests=cpu=100m,memory=512Mi 
+            oc label dc jenkins app=jenkins --overwrite 
+
+            HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
+            
+            sleep 5
+
+            oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/sonarqube-template.yaml --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=6Gi --param=SONAR_VOLUME_CAPACITY=50Gi
+
+            if [ "${WITH_CHE}" == "true" ] ; then
+              oc process -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/che-single-user.yml \
+                --param PROJECT_NAME=$CICD_NAMESPACE \
+                --param DOMAIN_NAME=$HOSTNAME \
+                --param OPENSHIFT_OAUTH_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+                | oc create -f -
+
+              oc set resources dc/che --limits=cpu=1,memory=2Gi --requests=cpu=200m,memory=512Mi
+            fi
+
+            if [ "${EPHEMERAL}" == "true" ] ; then
+              oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/nexus3-template.yaml --param=NEXUS_VERSION=3.7.1 --param=MAX_MEMORY=2Gi
+            else
+              oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.8.0 --param=MAX_MEMORY=4Gi --param=VOLUME_CAPACITY=100Gi
+            fi
+
+          image: openshift/origin:v3.9.0
+          name: cicd-demo-installer-job
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        restartPolicy: Never
