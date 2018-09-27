@@ -113,7 +113,7 @@ done
 LOGGEDIN_USER=$(oc $ARG_OC_OPS whoami)
 OPENSHIFT_USER=${ARG_USERNAME:-$LOGGEDIN_USER}
 PRJ_SUFFIX=${ARG_PROJECT_SUFFIX:-`echo $OPENSHIFT_USER | sed -e 's/[-@].*//g'`}
-GITHUB_ACCOUNT=${GITHUB_ACCOUNT:-OpenShiftDemos}
+GITHUB_ACCOUNT=${GITHUB_ACCOUNT:-mylisk}
 GITHUB_REF=${GITHUB_REF:-ocp-3.9}
 
 function deploy() {
@@ -141,6 +141,8 @@ function deploy() {
   sleep 2
 
   oc new-app jenkins-ephemeral -n cicd-$PRJ_SUFFIX
+  
+  oc create -f https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/templates/eap70-image-stream.json -n openshift
 
   sleep 2
 
