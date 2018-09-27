@@ -295,25 +295,22 @@ objects:
               oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/gogs-template.yaml \
                   --param=GOGS_VERSION=0.11.34 \
                   --param=HOSTNAME=$GOGS_HOSTNAME \
-                  --param=NODE_SELECTOR=infra \
                   --param=SKIP_TLS_VERIFY=true
             else
               oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/gogs-persistent-template.yaml \
                   --param=GOGS_VERSION=0.11.34 \
                   --param=HOSTNAME=$GOGS_HOSTNAME \
-                  --param=NODE_SELECTOR=infra \
                   --param=SKIP_TLS_VERIFY=true
             fi
             
             sleep 5
 
-            oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/sonarqube-template.yaml --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=6Gi --param=SONAR_VOLUME_CAPACITY=50Gi --param=NODE_SELECTOR=infra
+            oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/sonarqube-template.yaml --param=SONARQUBE_VERSION=7.0 --param=SONAR_MAX_MEMORY=6Gi --param=SONAR_VOLUME_CAPACITY=50Gi
 
             if [ "${WITH_CHE}" == "true" ] ; then
               oc process -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/che-single-user.yml \
                 --param PROJECT_NAME=$CICD_NAMESPACE \
                 --param DOMAIN_NAME=$HOSTNAME \
-                --param=NODE_SELECTOR=infra \
                 --param OPENSHIFT_OAUTH_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
                 | oc create -f -
 
@@ -321,9 +318,9 @@ objects:
             fi
 
             if [ "${EPHEMERAL}" == "true" ] ; then
-              oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/nexus3-template.yaml --param=NEXUS_VERSION=3.7.1 --param=MAX_MEMORY=2Gi --param=NODE_SELECTOR=infra
+              oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/nexus3-template.yaml --param=NEXUS_VERSION=3.7.1 --param=MAX_MEMORY=2Gi
             else
-              oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.8.0 --param=MAX_MEMORY=4Gi --param=VOLUME_CAPACITY=100Gi --param=NODE_SELECTOR=infra
+              oc new-app -f https://raw.githubusercontent.com/mylisk/openshift-cd-demo/ocp-3.9/templates/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.8.0 --param=MAX_MEMORY=4Gi --param=VOLUME_CAPACITY=100Gi
             fi
 
             GOGS_SVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')

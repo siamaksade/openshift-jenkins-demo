@@ -38,10 +38,6 @@ parameters:
     description: GitHub client secret
     name: GITHUB_CLIENT_SECRET
     value: ""
-  - displayName: Pod Node Selector
-    name: NODE_SELECTOR
-    required: true
-    value: compute
   - description: Volume space available e.g. 2Gi, 10Gi
     displayName: Volume Space for Che
     name: DATA_VOLUME_CAPACITY
@@ -185,8 +181,6 @@ objects:
           labels:
             app: che
         spec:
-          nodeSelector:
-            region: ${NODE_SELECTOR}
           containers:
           - env:
             - name: CHE_DOCKER_IP_EXTERNAL

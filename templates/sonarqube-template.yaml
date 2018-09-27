@@ -119,8 +119,6 @@ objects:
           - mountPath: /opt/sonarqube/data
             name: sonarqube-data
         dnsPolicy: ClusterFirst
-        nodeSelector:
-          region: ${NODE_SELECTOR}
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
@@ -153,10 +151,6 @@ parameters:
   value: "6.7"
   name: SONARQUBE_VERSION
   required: true
-- displayName: Pod Node Selector
-  name: NODE_SELECTOR
-  required: true
-  value: compute
 - description: Volume space available for SonarQube
   displayName: SonarQube Volume Capacity
   name: SONAR_VOLUME_CAPACITY

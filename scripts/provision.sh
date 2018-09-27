@@ -119,7 +119,7 @@ GITHUB_REF=${GITHUB_REF:-ocp-3.9}
 function deploy() {
   oc $ARG_OC_OPS new-project dev-$PRJ_SUFFIX   --display-name="Tasks - Dev"
   oc $ARG_OC_OPS new-project stage-$PRJ_SUFFIX --display-name="Tasks - Stage"
-  oc $ARG_OC_OPS new-project cicd-$PRJ_SUFFIX  --display-name="CI/CD"
+  oc $ARG_OC_OPS new-project cicd-$PRJ_SUFFIX  --display-name="CI/CD" --node-selector='node-role.kubernetes.io/infra=true'
 
   sleep 2
 
