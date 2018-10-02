@@ -44,6 +44,17 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: default
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      credential.sync.jenkins.openshift.io: 'true'
+    name: quay-cicd-secret
+  type: kubernetes.io/basic-auth
+  data:
+    password: >-
+      R0tDV09EOU4wTFJGNlRJQVg5OVJLNDQ4WThDNFFCTDY5VENaSTJWSUJDRDQyTzFMV0lGVlROVEdCTUsyV05BWQ==
+    username: c2lhbWFrc2FkZStjaWNkZGVtbw==
 # Pipeline
 - apiVersion: v1
   kind: BuildConfig
@@ -108,26 +119,6 @@ objects:
                   sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
                 }
               }
-              stage('Create Image Builder') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject(env.DEV_PROJECT) {
-                        return !openshift.selector("bc", "tasks").exists();
-                      }
-                    }
-                  }
-                }
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject(env.DEV_PROJECT) {
-                        openshift.newBuild("--name=tasks", "--image-stream=jboss-eap70-openshift:1.5", "--binary=true")
-                      }
-                    }
-                  }
-                }
-              }
               stage('Build Image') {
                 steps {
                   sh "rm -rf oc-build && mkdir -p oc-build/deployments"
@@ -142,31 +133,20 @@ objects:
                   }
                 }
               }
-              stage('Create DEV') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject(env.DEV_PROJECT) {
-                        return !openshift.selector('dc', 'tasks').exists()
-                      }
-                    }
-                  }
+              stage('Push Quay Registry') {
+                agent {
+                  label 'skopeo'
                 }
                 steps {
                   script {
                     openshift.withCluster() {
+                      def namespace = openshift.project()
                       openshift.withProject(env.DEV_PROJECT) {
-                        def app = openshift.newApp("tasks:latest")
-                        app.narrow("svc").expose();
-
-                        openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                        openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
-
-                        def dc = openshift.selector("dc", "tasks")
-                        while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
-                            sleep 10
+                        def image = openshift.selector("istag", "tasks:latest").object().image.dockerImageReference
+                        def token = readFile "/run/secrets/kubernetes.io/serviceaccount/token"
+                        withCredentials([usernamePassword(credentialsId: "${namespace}-quay-cicd-secret", usernameVariable: "QUAY_USER", passwordVariable: "QUAY_PWD")]) {
+                          sh "skopeo copy docker://${image} docker://quay.io/siamaksade/tasks-sample-app --src-creds openshift:${token} --dest-creds $QUAY_USER:$QUAY_PWD --src-tls-verify=false --dest-tls-verify=false"
                         }
-                        openshift.set("triggers", "dc/tasks", "--manual")
                       }
                     }
                   }
@@ -263,6 +243,39 @@ objects:
         <annotations/>
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+  skopeo-template: |-
+    <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+      <inheritFrom></inheritFrom>
+      <name>skopeo</name>
+      <privileged>false</privileged>
+      <alwaysPullImage>false</alwaysPullImage>
+      <instanceCap>2147483647</instanceCap>
+      <idleMinutes>0</idleMinutes>
+      <label>skopeo</label>
+      <serviceAccount>jenkins</serviceAccount>
+      <nodeSelector></nodeSelector>
+      <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+      <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+        <memory>false</memory>
+      </workspaceVolume>
+      <volumes />
+      <containers>
+        <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+          <name>jnlp</name>
+          <image>docker.io/siamaksade/jenkins-slave-skopeo-centos7</image>
+          <privileged>false</privileged>
+          <alwaysPullImage>false</alwaysPullImage>
+          <workingDir>/tmp</workingDir>
+          <command></command>
+          <args>${computer.jnlpmac} ${computer.name}</args>
+          <ttyEnabled>false</ttyEnabled>
+          <envVars/>
+        </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+      </containers>
+      <envVars/>
+      <annotations/>
+      <imagePullSecrets/>
+    </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
 # Setup Demo
 - apiVersion: batch/v1
   kind: Job
@@ -386,6 +399,19 @@ objects:
               cat /tmp/curl.log
               exit 255
             fi
+
+            # create dev env
+            oc import-image wildfly --from=openshift/wildfly-101-centos7 --confirm -n ${DEV_PROJECT} 
+            oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
+
+            oc import-image tasks:latest --from=quay.io/siamaksade/tasks-sample-app:eap-7-release --confirm -n ${DEV_PROJECT} 
+            oc new-app tasks:latest -n ${DEV_PROJECT}
+            oc expose svc/tasks -n ${DEV_PROJECT}\
+            oc probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
+            oc probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
+            oc rollout status dc/tasks -w -n ${DEV_PROJECT}
+            oc set triggers dc/tasks --manual -n ${DEV_PROJECT}
+
           image: openshift/origin:v3.10
           name: cicd-demo-installer-job
           resources: {}
