@@ -63,8 +63,7 @@ objects:
       pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
     labels:
       app: cicd-pipeline
-      name: cicd-pipeline
-    name: tasks-pipeline
+    name: tasks-deploy-dev
   spec:
     triggers:
       - type: GitHub
@@ -163,14 +162,51 @@ objects:
                   }
                 }
               }
-              stage('Promote to STAGE?') {
+            }
+          }
+      type: JenkinsPipeline
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
+    labels:
+      app: cicd-pipeline
+    name: tasks-promote-stage
+  spec:
+    triggers:
+      - type: GitHub
+        github:
+          secret: ${WEBHOOK_SECRET}
+      - type: Generic
+        generic:
+          secret: ${WEBHOOK_SECRET}
+    runPolicy: Serial
+    source:
+      type: None
+    strategy:
+      jenkinsPipelineStrategy:
+        env:
+        - name: DEV_PROJECT
+          value: ${DEV_PROJECT}
+        - name: STAGE_PROJECT
+          value: ${STAGE_PROJECT}
+        jenkinsfile: |-
+          def version
+
+          pipeline {
+            agent {
+              label 'maven'
+            }
+            stages {
+              stage('Promote Image?') {
                 steps {
-                  timeout(time:15, unit:'MINUTES') {
-                      input message: "Promote to STAGE?", ok: "Promote"
-                  }
+                  git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
 
                   script {
                     openshift.withCluster() {
+                      def pom = readMavenPom file: 'pom.xml'
+                      version = pom.version
                       openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${version}")
                     }
                   }
@@ -244,38 +280,38 @@ objects:
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
   skopeo-template: |-
-    <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
-      <inheritFrom></inheritFrom>
-      <name>skopeo</name>
-      <privileged>false</privileged>
-      <alwaysPullImage>false</alwaysPullImage>
-      <instanceCap>2147483647</instanceCap>
-      <idleMinutes>0</idleMinutes>
-      <label>skopeo</label>
-      <serviceAccount>jenkins</serviceAccount>
-      <nodeSelector></nodeSelector>
-      <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
-      <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
-        <memory>false</memory>
-      </workspaceVolume>
-      <volumes />
-      <containers>
-        <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
-          <name>jnlp</name>
-          <image>docker.io/siamaksade/jenkins-slave-skopeo-centos7</image>
-          <privileged>false</privileged>
-          <alwaysPullImage>false</alwaysPullImage>
-          <workingDir>/tmp</workingDir>
-          <command></command>
-          <args>${computer.jnlpmac} ${computer.name}</args>
-          <ttyEnabled>false</ttyEnabled>
-          <envVars/>
-        </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
-      </containers>
-      <envVars/>
-      <annotations/>
-      <imagePullSecrets/>
-    </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+        <inheritFrom></inheritFrom>
+        <name>skopeo</name>
+        <privileged>false</privileged>
+        <alwaysPullImage>false</alwaysPullImage>
+        <instanceCap>2147483647</instanceCap>
+        <idleMinutes>0</idleMinutes>
+        <label>skopeo</label>
+        <serviceAccount>jenkins</serviceAccount>
+        <nodeSelector></nodeSelector>
+        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+          <memory>false</memory>
+        </workspaceVolume>
+        <volumes />
+        <containers>
+          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+            <name>jnlp</name>
+            <image>docker.io/siamaksade/jenkins-slave-skopeo-centos7</image>
+            <privileged>false</privileged>
+            <alwaysPullImage>false</alwaysPullImage>
+            <workingDir>/tmp</workingDir>
+            <command></command>
+            <args>${computer.jnlpmac} ${computer.name}</args>
+            <ttyEnabled>false</ttyEnabled>
+            <envVars/>
+          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+        </containers>
+        <envVars/>
+        <annotations/>
+        <imagePullSecrets/>
+      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
 # Setup Demo
 - apiVersion: batch/v1
   kind: Job
@@ -331,10 +367,13 @@ objects:
             fi
 
             if [ "${EPHEMERAL}" == "true" ] ; then
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.12.1 --param=MAX_MEMORY=2Gi
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.13.0
             else
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.12.1 --param=MAX_MEMORY=2Gi
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.13.0
             fi
+
+            oc set resources dc/nexus --limits=cpu=200m,memory=1Gi --requests=cpu=2,memory=4Gi 
+
 
             GOGS_SVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
             GOGS_USER=gogs
