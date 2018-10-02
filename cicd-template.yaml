@@ -457,3 +457,4 @@ objects:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
         restartPolicy: Never
+        serviceAccount: jenkins
