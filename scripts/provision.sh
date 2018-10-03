@@ -26,6 +26,8 @@ function usage() {
     echo "   --ephemeral               Deploy demo without persistent storage. Default false"
     echo "   --deploy-che              Deploy Eclipse Che as an online IDE for code changes. Default false"
     echo "   --oc-options              oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
+    echo "   --quay-username           Quay.io username to push the images to tasks-sample-app repository on your Quay.io account"
+    echo "   --quay-password           Quay.io password to push the images to tasks-sample-app repository on your Quay.io account"
     echo
 }
 
@@ -35,6 +37,8 @@ ARG_COMMAND=
 ARG_EPHEMERAL=false
 ARG_OC_OPS=
 ARG_DEPLOY_CHE=false
+ARG_QUAY_USER=
+ARG_QUAY_PASS=
 
 while :; do
     case $1 in
@@ -76,6 +80,26 @@ while :; do
                 shift
             else
                 printf 'ERROR: "--oc-options" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --quay-username)
+            if [ -n "$2" ]; then
+                ARG_QUAY_USER=$2
+                shift
+            else
+                printf 'ERROR: "--quay-username" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --quay-password)
+            if [ -n "$2" ]; then
+                ARG_QUAY_PASS=$2
+                shift
+            else
+                printf 'ERROR: "--quay-pass" requires a non-empty value.\n' >&2
                 usage
                 exit 255
             fi
@@ -146,7 +170,7 @@ function deploy() {
 
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
-  oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_CHE=$ARG_DEPLOY_CHE --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
+  oc $ARG_OC_OPS new-app -f $template -p DEV_PROJECT=dev-$PRJ_SUFFIX -p STAGE_PROJECT=stage-$PRJ_SUFFIX -p WITH_CHE=$ARG_DEPLOY_CHE -p EPHEMERAL=$ARG_EPHEMERAL -p QUAY_USERNAME=$ARG_QUAY_USER -p QUAY_PASSWORD=$ARG_QUAY_PASS -n cicd-$PRJ_SUFFIX 
 }
 
 function make_idle() {
