@@ -195,7 +195,7 @@ objects:
       pipeline.alpha.openshift.io/uses: '[{"name": "jenkins", "namespace": "", "kind": "DeploymentConfig"}]'
     labels:
       app: cicd-pipeline
-    name: tasks-promote-stage
+    name: tasks-deploy-stage
   spec:
     triggers:
       - type: GitHub
@@ -247,7 +247,7 @@ objects:
               }
               stage('Approve Deployment?') {
                 when { 
-                    expression { return scanResult.out.vulnerability_summary.high > 0 }
+                    expression { return scanResult.vulnerability_summary.high > 0 }
                 }
                 steps {
                   timeout(time:15, unit:'MINUTES') {
@@ -380,7 +380,7 @@ objects:
             oc set resources dc/jenkins --limits=cpu=2,memory=2Gi --requests=cpu=100m,memory=512Mi 
             oc label dc jenkins app=jenkins --overwrite 
 
-            HOSTNAME=$(oc get route jenkins -o templaste --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
+            HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
             GOGS_HOSTNAME="gogs-$CICD_NAMESPACE.$HOSTNAME"
 
             if [ "${EPHEMERAL}" == "true" ] ; then
