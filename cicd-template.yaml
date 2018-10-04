@@ -31,9 +31,27 @@ parameters:
 - displayName: Quay.io Username
   description: Quay.io username to push the images to tasks-sample-app repository on your Quay.io account
   name: QUAY_USERNAME
+  required: true
 - displayName: Quay.io Password
   description: Quay.io password to push the images to tasks-sample-app repository on your Quay.io account
   name: QUAY_PASSWORD
+  required: true
+- displayName: Aqua CSP Username
+  description: Aqua username for security scanning
+  name: AQUA_USERNAME
+  required: true
+- displayName: Aqua CSP Password
+  description: Aqua password for security scanning
+  name: AQUA_PASSWORD
+  required: true
+- displayName: Aqua CSP Server
+  description: Aqua server url
+  name: AQUA_SERVER
+  required: true
+- displayName: Registry Name in Aqua CSP
+  name: AQUA_REGISTRY
+  required: true
+  value: openshift
 - description: Webhook secret
   from: '[a-zA-Z0-9]{8}'
   generate: expression
@@ -50,17 +68,6 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: default
-# - apiVersion: v1
-#   kind: Secret
-#   metadata:
-#     labels:
-#       credential.sync.jenkins.openshift.io: 'true'
-#     name: quay-cicd-secret
-#   type: kubernetes.io/basic-auth
-#   data:
-#     password: >-
-#       R0tDV09EOU4wTFJGNlRJQVg5OVJLNDQ4WThDNFFCTDY5VENaSTJWSUJDRDQyTzFMV0lGVlROVEdCTUsyV05BWQ==
-#     username: c2lhbWFrc2FkZStjaWNkZGVtbw==
 - apiVersion: v1
   kind: Secret
   type: Opaque 
@@ -230,16 +237,7 @@ objects:
                 steps {
                   script {
                     openshift.withCluster() {
-                      openshift.run("aqua-scanner-cli -n aqua-security --serviceaccount=aqua-account --image=aqua-security/scanner-cli:3.2 --rm=true --attach=true --restart=Never --overrides='{\"apiVersion\":\"v1\",\"spec\":{\"containers\":[{\"name\":\"scanner-container\",\"image\":\"docker-registry.default.svc:5000/aqua-security/scanner-cli:3.2\",\"volumeMounts\":[{\"mountPath\":\"/var/run/docker.sock\",\"name\":\"docker-socket-mount\"}],\"args\":[\"scan\",\"-H\",\"http://aqua-web.aqua-security:8080\",\"-U\",\"scanner\",\"-P\",\"scanner123\",\"--register\",\"--registry\",\"openshift\",\"dev-add4/tasks:latest\"]}],\"volumes\":[{\"hostPath\":{\"path\":\"/var/run/docker.sock\",\"type\":\"\"},\"name\":\"docker-socket-mount\"}]}}'")
-                    }
-                  }
-                }
-              }
-              stage('Scan Image') {
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      scanResult = openshift.run("aqua-scanner-cli -n aqua-security --serviceaccount=aqua-account --image=aqua-security/scanner-cli:3.2 --rm=true --attach=true --restart=Never --overrides='{\"apiVersion\":\"v1\",\"spec\":{\"containers\":[{\"name\":\"scanner-container\",\"image\":\"docker-registry.default.svc:5000/aqua-security/scanner-cli:3.2\",\"volumeMounts\":[{\"mountPath\":\"/var/run/docker.sock\",\"name\":\"docker-socket-mount\"}],\"args\":[\"scan\",\"-H\",\"http://aqua-web.aqua-security:8080\",\"-U\",\"scanner\",\"-P\",\"scanner123\",\"--register\",\"--registry\",\"openshift\",\"dev-add4/tasks:latest\"]}],\"volumes\":[{\"hostPath\":{\"path\":\"/var/run/docker.sock\",\"type\":\"\"},\"name\":\"docker-socket-mount\"}]}}'")
+                      scanResult = openshift.run("aqua-scanner-cli -n aqua-security --serviceaccount=aqua-account --image=aqua-security/scanner-cli:3.2 --rm=true --attach=true --restart=Never --overrides='{\"apiVersion\":\"v1\",\"spec\":{\"containers\":[{\"name\":\"scanner-container\",\"image\":\"docker-registry.default.svc:5000/aqua-security/scanner-cli:3.2\",\"volumeMounts\":[{\"mountPath\":\"/var/run/docker.sock\",\"name\":\"docker-socket-mount\"}],\"args\":[\"scan\",\"-H\",\"${AQUA_SERVER}\",\"-U\",\"${AQUA_USERNAME}\",\"-P\",\"${AQUA_PASSWORD}\",\"--register\",\"--registry\",\"${AQUA_REGISTRY}\",\"${env.DEV_PROJECT}/tasks:latest\"]}],\"volumes\":[{\"hostPath\":{\"path\":\"/var/run/docker.sock\",\"type\":\"\"},\"name\":\"docker-socket-mount\"}]}}'")
                       scanResult = readJSON text: scanResult.out
                     }
                   }
