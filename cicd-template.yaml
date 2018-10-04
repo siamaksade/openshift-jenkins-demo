@@ -483,7 +483,7 @@ objects:
             fi
 
             # create dev env
-            oc import-image wildfly --from=openshift/wildfly-101-centos7 --confirm -n ${DEV_PROJECT} 
+            oc import-image wildfly --from=openshift/wildfly-120-centos7 --confirm -n ${DEV_PROJECT} 
             oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
 
             oc import-image tasks:latest --from=quay.io/siamaksade/tasks-sample-app:eap-7-release --confirm -n ${DEV_PROJECT} 
