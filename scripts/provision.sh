@@ -21,13 +21,17 @@ function usage() {
     echo "   unidle                   Make all demo services unidle"
     echo 
     echo "OPTIONS:"
-    echo "   --user [username]         The admin user for the demo projects. mandatory if logged in as system:admin"
-    echo "   --project-suffix [suffix] Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
-    echo "   --ephemeral               Deploy demo without persistent storage. Default false"
-    echo "   --deploy-che              Deploy Eclipse Che as an online IDE for code changes. Default false"
-    echo "   --oc-options              oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
-    echo "   --quay-username           Quay.io username to push the images to tasks-sample-app repository on your Quay.io account"
-    echo "   --quay-password           Quay.io password to push the images to tasks-sample-app repository on your Quay.io account"
+    echo "   --quay-username            Required   Quay.io username to push the images to tasks-sample-app repository on your Quay.io account"
+    echo "   --quay-password            Required   Quay.io password to push the images to tasks-sample-app repository on your Quay.io account"
+    echo "   --aqua-username            Required   Aqua CSP username"
+    echo "   --aqua-password            Required   Aqua CSP password"
+    echo "   --aqua-server              Required   Aqua CSP server url"
+    echo "   --aqua-openshift-registry  Optional    Name of OpenShift registry in Aqua"
+    echo "   --user [username]          Optional   The admin user for the demo projects. mandatory if logged in as system:admin"
+    echo "   --project-suffix [suffix]  Optional   Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
+    echo "   --ephemeral                Optional   Deploy demo without persistent storage. Default false"
+    echo "   --deploy-che               Optional   Deploy Eclipse Che as an online IDE for code changes. Default false"
+    echo "   --oc-options               Optional   oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
 }
 
@@ -39,6 +43,10 @@ ARG_OC_OPS=
 ARG_DEPLOY_CHE=false
 ARG_QUAY_USER=
 ARG_QUAY_PASS=
+ARG_AQUA_USER=
+ARG_AQUA_PASS=
+ARG_AQUA_SERVER=
+ARG_AQUA_REGISTRY=openshift
 
 while :; do
     case $1 in
@@ -100,6 +108,46 @@ while :; do
                 shift
             else
                 printf 'ERROR: "--quay-pass" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --aqua-username)
+            if [ -n "$2" ]; then
+                ARG_AQUA_USER=$2
+                shift
+            else
+                printf 'ERROR: "--aqua-username" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --aqua-password)
+            if [ -n "$2" ]; then
+                ARG_AQUA_PASS=$2
+                shift
+            else
+                printf 'ERROR: "--aqua-pass" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --aqua-registry)
+            if [ -n "$2" ]; then
+                ARG_AQUA_REGISTRY=$2
+                shift
+            else
+                printf 'ERROR: "--aqua-registry" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --aqua-server)
+            if [ -n "$2" ]; then
+                ARG_AQUA_SERVER=$2
+                shift
+            else
+                printf 'ERROR: "--aqua-server" requires a non-empty value.\n' >&2
                 usage
                 exit 255
             fi
@@ -170,7 +218,7 @@ function deploy() {
 
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
-  oc $ARG_OC_OPS new-app -f $template -p DEV_PROJECT=dev-$PRJ_SUFFIX -p STAGE_PROJECT=stage-$PRJ_SUFFIX -p WITH_CHE=$ARG_DEPLOY_CHE -p EPHEMERAL=$ARG_EPHEMERAL -p QUAY_USERNAME=$ARG_QUAY_USER -p QUAY_PASSWORD=$ARG_QUAY_PASS -n cicd-$PRJ_SUFFIX 
+  oc $ARG_OC_OPS new-app -f $template -p DEV_PROJECT=dev-$PRJ_SUFFIX -p STAGE_PROJECT=stage-$PRJ_SUFFIX -p WITH_CHE=$ARG_DEPLOY_CHE -p EPHEMERAL=$ARG_EPHEMERAL -p QUAY_USERNAME=$ARG_QUAY_USER -p QUAY_PASSWORD=$ARG_QUAY_PASS -p AQUA_USERNAME=$ARG_AQUA_USER -p AQUA_PASSWORD=$ARG_AQUA_PASS -p AQUA_SERVER=$ARG_AQUA_SERVER -p AQUA_REGISTRY=$ARG_AQUA_REGISTRY -n cicd-$PRJ_SUFFIX 
 }
 
 function make_idle() {
