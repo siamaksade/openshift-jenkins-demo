@@ -73,6 +73,8 @@ objects:
   type: Opaque 
   metadata:
     name: quay-cicd-secret
+    labels:
+      credential.sync.jenkins.openshift.io: 'true'
   stringData: 
     username: ${QUAY_USERNAME} 
     password: ${QUAY_PASSWORD}
