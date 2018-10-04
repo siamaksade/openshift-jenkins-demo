@@ -222,19 +222,6 @@ objects:
               label 'maven'
             }
             stages {
-              stage('Promote Image') {
-                steps {
-                  git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
-
-                  script {
-                    openshift.withCluster() {
-                      def pom = readMavenPom file: 'pom.xml'
-                      version = pom.version
-                      openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${version}")
-                    }
-                  }
-                }
-              }
               stage('Scan Image') {
                 steps {
                   script {
@@ -252,6 +239,19 @@ objects:
                 steps {
                   timeout(time:15, unit:'MINUTES') {
                       input message: "Tasks App image has ${scanResult.vulnerability_summary.high} critical vulnerabilities (${scanResult.vulnerability_summary.total} total). Deploy to STAGE?", ok: "Yes"
+                  }
+                }
+              }
+              stage('Promote Image') {
+                steps {
+                  git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
+
+                  script {
+                    openshift.withCluster() {
+                      def pom = readMavenPom file: 'pom.xml'
+                      version = pom.version
+                      openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${version}")
+                    }
                   }
                 }
               }
