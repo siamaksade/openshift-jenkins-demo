@@ -21,11 +21,11 @@ function usage() {
     echo "   unidle                   Make all demo services unidle"
     echo 
     echo "OPTIONS:"
-    echo "   --user [username]         The admin user for the demo projects. mandatory if logged in as system:admin"
-    echo "   --project-suffix [suffix] Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
-    echo "   --ephemeral               Deploy demo without persistent storage. Default false"
-    echo "   --deploy-che              Deploy Eclipse Che as an online IDE for code changes. Default false"
-    echo "   --oc-options              oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
+    echo "   --user [username]          Optional    The admin user for the demo projects. mandatory if logged in as system:admin"
+    echo "   --project-suffix [suffix]  Optional    Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
+    echo "   --ephemeral                Optional    Deploy demo without persistent storage. Default false"
+    echo "   --deploy-che               Optional    Deploy Eclipse Che as an online IDE for code changes. Default false"
+    echo "   --oc-options               Optional    oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
 }
 

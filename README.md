@@ -83,10 +83,6 @@ your own names and use the following to create the demo:
 
 ## Troubleshooting
 
-* If pipeline execution fails with ```error: no match for "jboss-eap70-openshift"```, import the jboss imagestreams in OpenShift.
-  ```
-  oc create -f https://raw.githubusercontent.com/openshift/library/master/official/eap/imagestreams/jboss-eap70-openshift-rhel7.json -n openshift
-  ```
 * If Maven fails with `/opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed` (e.g. during static analysis), you are running out of memory and need more memory for OpenShift.
 
 ## Demo Guide

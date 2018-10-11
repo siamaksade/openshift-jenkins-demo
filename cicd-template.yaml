@@ -108,65 +108,13 @@ objects:
                   sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
                 }
               }
-              stage('Create Image Builder') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject(env.DEV_PROJECT) {
-                        return !openshift.selector("bc", "tasks").exists();
-                      }
-                    }
-                  }
-                }
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject(env.DEV_PROJECT) {
-                        openshift.newBuild("--name=tasks", "--image-stream=jboss-eap70-openshift:1.5", "--binary=true")
-                      }
-                    }
-                  }
-                }
-              }
               stage('Build Image') {
                 steps {
-                  sh "rm -rf oc-build && mkdir -p oc-build/deployments"
-                  sh "cp target/openshift-tasks.war oc-build/deployments/ROOT.war"
-                  
+                  sh "cp target/openshift-tasks.war target/ROOT.war"
                   script {
                     openshift.withCluster() {
                       openshift.withProject(env.DEV_PROJECT) {
-                        openshift.selector("bc", "tasks").startBuild("--from-dir=oc-build", "--wait=true")
-                      }
-                    }
-                  }
-                }
-              }
-              stage('Create DEV') {
-                when {
-                  expression {
-                    openshift.withCluster() {
-                      openshift.withProject(env.DEV_PROJECT) {
-                        return !openshift.selector('dc', 'tasks').exists()
-                      }
-                    }
-                  }
-                }
-                steps {
-                  script {
-                    openshift.withCluster() {
-                      openshift.withProject(env.DEV_PROJECT) {
-                        def app = openshift.newApp("tasks:latest")
-                        app.narrow("svc").expose();
-
-                        openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                        openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
-
-                        def dc = openshift.selector("dc", "tasks")
-                        while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
-                            sleep 10
-                        }
-                        openshift.set("triggers", "dc/tasks", "--manual")
+                        openshift.selector("bc", "tasks").startBuild("--from-file=target/ROOT.war", "--wait=true")
                       }
                     }
                   }
@@ -323,10 +271,12 @@ objects:
             fi
 
             if [ "${EPHEMERAL}" == "true" ] ; then
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.12.1 --param=MAX_MEMORY=2Gi
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.13.0 --param=MAX_MEMORY=2Gi
             else
-              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.12.1 --param=MAX_MEMORY=2Gi
+              oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-persistent-template.yaml --param=NEXUS_VERSION=3.13.0 --param=MAX_MEMORY=2Gi
             fi
+
+            oc set resources dc/nexus --limits=cpu=200m,memory=1Gi --requests=cpu=2,memory=4Gi 
 
             GOGS_SVC=$(oc get svc gogs -o template --template='{{.spec.clusterIP}}')
             GOGS_USER=gogs
@@ -391,6 +341,17 @@ objects:
               cat /tmp/curl.log
               exit 255
             fi
+
+            # create dev env
+            oc import-image wildfly --from=openshift/wildfly-120-centos7 --confirm -n ${DEV_PROJECT} 
+            oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
+            oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
+            oc expose dc/tasks --port=8080 -n ${DEV_PROJECT}
+            oc expose svc/tasks -n ${DEV_PROJECT}
+            oc probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
+            oc probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
+            oc set triggers dc/tasks --manual -n ${DEV_PROJECT}
+
           image: openshift/origin:v3.11
           name: cicd-demo-installer-job
           resources: {}
