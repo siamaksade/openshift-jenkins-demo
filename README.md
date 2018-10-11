@@ -20,7 +20,7 @@ On every pipeline execution, the code goes through the following steps:
 
 1. Code is cloned from Gogs, built, tested and analyzed for bugs and bad patterns
 2. The WAR artifact is pushed to Nexus Repository manager
-3. A container image (_tasks:latest_) is built based on the _Tasks_ application WAR artifact deployed on JBoss EAP 6
+3. A container image (_tasks:latest_) is built based on the _Tasks_ application WAR artifact deployed on WildFly
 4. The _Tasks_ container image is deployed in a fresh new container in DEV project
 5. If tests successful, the DEV image is tagged with the application version (_tasks:7.x_) in the STAGE project
 6. The staged image is deployed in a fresh new container in the STAGE project
@@ -34,7 +34,6 @@ The application used in this pipeline is a JAX-RS application which is available
 
 ## Prerequisites
 * 10+ GB memory
-* JBoss EAP 7 imagestreams imported to OpenShift (see Troubleshooting section for details)
 
 ## Deploy on RHPDS
 
