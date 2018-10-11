@@ -236,6 +236,15 @@ objects:
             oc set resources dc/jenkins --limits=cpu=2,memory=2Gi --requests=cpu=100m,memory=512Mi 
             oc label dc jenkins app=jenkins --overwrite 
 
+            oc import-image wildfly --from=openshift/wildfly-120-centos7 --confirm -n ${DEV_PROJECT} 
+            oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
+            oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
+            oc expose dc/tasks --port=8080 -n ${DEV_PROJECT}
+            oc expose svc/tasks -n ${DEV_PROJECT}
+            oc probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
+            oc probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
+            oc set triggers dc/tasks --manual -n ${DEV_PROJECT}
+
             HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
             GOGS_HOSTNAME="gogs-$CICD_NAMESPACE.$HOSTNAME"
 
@@ -312,7 +321,7 @@ objects:
             -u $GOGS_USER:$GOGS_PWD -X POST http://$GOGS_SVC:3000/api/v1/repos/migrate -d @/tmp/data.json)
 
             if [ $_RETURN != "201" ] ;then
-              echo "ERROR: Failed to imported openshift-tasks GitHub repo"
+              echo "ERROR: Failed to import openshift-tasks GitHub repo"
               cat /tmp/curl.log
               exit 255
             fi
@@ -341,17 +350,6 @@ objects:
               cat /tmp/curl.log
               exit 255
             fi
-
-            # create dev env
-            oc import-image wildfly --from=openshift/wildfly-120-centos7 --confirm -n ${DEV_PROJECT} 
-            oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
-            oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
-            oc expose dc/tasks --port=8080 -n ${DEV_PROJECT}
-            oc expose svc/tasks -n ${DEV_PROJECT}
-            oc probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
-            oc probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
-            oc set triggers dc/tasks --manual -n ${DEV_PROJECT}
-
           image: openshift/origin:v3.11
           name: cicd-demo-installer-job
           resources: {}
