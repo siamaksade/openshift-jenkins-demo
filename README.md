@@ -58,8 +58,8 @@ Follow these [instructions](docs/local-cluster.md) in order to create a local Op
   oc new-project cicd --display-name="CI/CD"
 
   # Grant Jenkins Access to Projects
-  oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n dev
-  oc policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n stage
+  oc policy add-role-to-group edit system:serviceaccounts:cicd -n dev
+  oc policy add-role-to-group edit system:serviceaccounts:cicd -n stage
   ```  
 
 And then deploy the demo:

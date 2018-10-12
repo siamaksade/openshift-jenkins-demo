@@ -146,15 +146,22 @@ objects:
                 }
               }
               stage('Promote to STAGE?') {
+                agent {
+                  label 'skopeo'
+                }
                 steps {
                   timeout(time:15, unit:'MINUTES') {
                       input message: "Promote to STAGE?", ok: "Promote"
                   }
 
                   script {
-                    if (!env.ENABLE_QUAY.toBoolean()) {
-                      openshift.withCluster() {
-                        openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:latest")
+                    openshift.withCluster() {
+                      if (env.ENABLE_QUAY.toBoolean()) {
+                        withCredentials([usernamePassword(credentialsId: "${openshift.project()}-quay-cicd-secret", usernameVariable: "QUAY_USER", passwordVariable: "QUAY_PWD")]) {
+                          sh "skopeo copy docker://quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest docker://quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:stage --src-creds $QUAY_USER:$QUAY_PWD --dest-creds $QUAY_USER:$QUAY_PWD --src-tls-verify=false --dest-tls-verify=false"
+                        }
+                      } else {
+                        openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:stage")
                       }
                     }
                   }
@@ -165,20 +172,7 @@ objects:
                   script {
                     openshift.withCluster() {
                       openshift.withProject(env.STAGE_PROJECT) {
-                        if (openshift.selector('dc', 'tasks').exists()) {
-                          openshift.selector('dc', 'tasks').delete()
-                          openshift.selector('svc', 'tasks').delete()
-                          openshift.selector('route', 'tasks').delete()
-                        }
-
-                        if (env.ENABLE_QUAY.toBoolean()) {
-                          openshift.newApp("--name=tasks", "--docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest").narrow("is").delete()
-                        } else {
-                          openshift.newApp("tasks:latest")
-                        }
-                        openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-                        openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
-                        openshift.selector("svc", "tasks").expose()
+                        openshift.selector("dc", "tasks").rollout().latest();
                       }
                     }
                   }
@@ -232,6 +226,39 @@ objects:
         <annotations/>
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+    skopeo-template: |-
+      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+        <inheritFrom></inheritFrom>
+        <name>skopeo</name>
+        <privileged>false</privileged>
+        <alwaysPullImage>false</alwaysPullImage>
+        <instanceCap>2147483647</instanceCap>
+        <idleMinutes>0</idleMinutes>
+        <label>skopeo</label>
+        <serviceAccount>jenkins</serviceAccount>
+        <nodeSelector></nodeSelector>
+        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+          <memory>false</memory>
+        </workspaceVolume>
+        <volumes />
+        <containers>
+          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+            <name>jnlp</name>
+            <image>docker.io/siamaksade/jenkins-slave-skopeo-centos7</image>
+            <privileged>false</privileged>
+            <alwaysPullImage>false</alwaysPullImage>
+            <workingDir>/tmp</workingDir>
+            <command></command>
+            <args>${computer.jnlpmac} ${computer.name}</args>
+            <ttyEnabled>false</ttyEnabled>
+            <envVars/>
+          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+        </containers>
+        <envVars/>
+        <annotations/>
+        <imagePullSecrets/>
+      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
 # Setup Demo
 - apiVersion: batch/v1
   kind: Job
@@ -262,24 +289,43 @@ objects:
             oc import-image wildfly --from=openshift/wildfly-120-centos7 --confirm -n ${DEV_PROJECT} 
             
             if [ "${ENABLE_QUAY}" == "true" ] ; then
+              # cicd
               oc create secret generic quay-cicd-secret --type=string --from-literal="username=${QUAY_USERNAME}" --from-literal="password=${QUAY_PASSWORD}" -n ${CICD_NAMESPACE}
-              oc create secret docker-registry quay-cicd-secret --docker-server=quay.io --docker-username="${QUAY_USERNAME}" --docker-password="${QUAY_PASSWORD}" --docker-email=cicd@redhat.com -n ${DEV_PROJECT}
-              oc create secret docker-registry quay-cicd-secret --docker-server=quay.io --docker-username="${QUAY_USERNAME}" --docker-password="${QUAY_PASSWORD}" --docker-email=cicd@redhat.com -n ${STAGE_PROJECT}
               oc label --overwrite secret quay-cicd-secret credential.sync.jenkins.openshift.io=true -n ${CICD_NAMESPACE}
+              
+              # dev
+              oc create secret docker-registry quay-cicd-secret --docker-server=quay.io --docker-username="${QUAY_USERNAME}" --docker-password="${QUAY_PASSWORD}" --docker-email=cicd@redhat.com -n ${DEV_PROJECT}
               oc new-build --name=tasks --image-stream=wildfly:latest --binary=true --push-secret=quay-cicd-secret --to-docker --to='quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest' -n ${DEV_PROJECT}
               oc new-app --name=tasks --docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest --allow-missing-images -n ${DEV_PROJECT}
               oc secrets link default quay-cicd-secret --for=pull -n ${DEV_PROJECT}
+              
+              # stage
+              oc create secret docker-registry quay-cicd-secret --docker-server=quay.io --docker-username="${QUAY_USERNAME}" --docker-password="${QUAY_PASSWORD}" --docker-email=cicd@redhat.com -n ${STAGE_PROJECT}
+              oc new-app --name=tasks --docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:stage --allow-missing-images -n ${STAGE_PROJECT}
               oc secrets link default quay-cicd-secret --for=pull -n ${STAGE_PROJECT}
             else
+              # dev
               oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
               oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
               oc set triggers dc -l app=tasks --containers=tasks --from-image=tasks:latest --manual -n ${DEV_PROJECT}
+              
+              # stage
+              oc new-app tasks:stage --allow-missing-images -n ${STAGE_PROJECT}
+              oc set triggers dc -l app=tasks --containers=tasks --from-image=tasks:stage --manual -n ${STAGE_PROJECT}
             fi
             
+            # dev project
             oc expose dc/tasks --port=8080 -n ${DEV_PROJECT}
             oc expose svc/tasks -n ${DEV_PROJECT}
             oc set probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
             oc set probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
+            oc rollout cancel dc/tasks -n ${STAGE_PROJECT}
+
+            # stage project
+            oc expose dc/tasks --port=8080 -n ${STAGE_PROJECT}
+            oc expose svc/tasks -n ${STAGE_PROJECT}
+            oc set probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10 -n ${STAGE_PROJECT}
+            oc set probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10 -n ${STAGE_PROJECT}
             oc rollout cancel dc/tasks -n ${DEV_PROJECT}
 
             # deploy gogs
