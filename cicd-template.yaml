@@ -301,8 +301,8 @@ objects:
               oc label --overwrite secret quay-cicd-secret credential.sync.jenkins.openshift.io=true -n ${CICD_NAMESPACE}
               oc new-build --name=tasks --image-stream=wildfly:latest --binary=true --push-secret=quay-cicd-secret --to-docker --to='quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest' -n ${DEV_PROJECT}
               oc new-app --name=tasks --docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest --allow-missing-images -n ${DEV_PROJECT}
-              oc secrets link default quay-cicd-secret--for=pull -n ${DEV_PROJECT}
-              oc secrets link default quay-cicd-secret--for=pull -n ${STAGE_PROJECT}
+              oc secrets link default quay-cicd-secret --for=pull -n ${DEV_PROJECT}
+              oc secrets link default quay-cicd-secret --for=pull -n ${STAGE_PROJECT}
               oc delete is tasks -n ${STAGE_PROJECT}
             else
               oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
