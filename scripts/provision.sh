@@ -21,10 +21,13 @@ function usage() {
     echo "   unidle                   Make all demo services unidle"
     echo 
     echo "OPTIONS:"
-    echo "   --user [username]          Optional    The admin user for the demo projects. mandatory if logged in as system:admin"
+    echo "   --enable-quay              Optional    Enable integration of build and deployments with quay.io"
+    echo "   --quay-username            Optional    quay.io username to push the images to a quay.io account. Required if --enable-quay is set"
+    echo "   --quay-password            Optional    quay.io password to push the images to a quay.io account. Required if --enable-quay is set"
+    echo "   --user [username]          Optional    The admin user for the demo projects. Required if logged in as system:admin"
     echo "   --project-suffix [suffix]  Optional    Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
     echo "   --ephemeral                Optional    Deploy demo without persistent storage. Default false"
-    echo "   --deploy-che               Optional    Deploy Eclipse Che as an online IDE for code changes. Default false"
+    echo "   --enable-che               Optional    Deploy Eclipse Che as an online IDE for code changes. Default false"
     echo "   --oc-options               Optional    oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
 }
@@ -35,6 +38,9 @@ ARG_COMMAND=
 ARG_EPHEMERAL=false
 ARG_OC_OPS=
 ARG_DEPLOY_CHE=false
+ARG_ENABLE_QUAY=false
+ARG_QUAY_USER=
+ARG_QUAY_PASS=
 
 while :; do
     case $1 in
@@ -80,10 +86,33 @@ while :; do
                 exit 255
             fi
             ;;
+        --enable-quay)
+            ARG_ENABLE_QUAY=true
+            ;;
+        --quay-username)
+            if [ -n "$2" ]; then
+                ARG_QUAY_USER=$2
+                shift
+            else
+                printf 'ERROR: "--quay-username" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
+        --quay-password)
+            if [ -n "$2" ]; then
+                ARG_QUAY_PASS=$2
+                shift
+            else
+                printf 'ERROR: "--quay-password" requires a non-empty value.\n' >&2
+                usage
+                exit 255
+            fi
+            ;;
         --ephemeral)
             ARG_EPHEMERAL=true
             ;;
-        --deploy-che)
+        --enable-che|--deploy-che)
             ARG_DEPLOY_CHE=true
             ;;
         -h|--help)
@@ -147,7 +176,7 @@ function deploy() {
 
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
-  oc $ARG_OC_OPS new-app -f $template --param DEV_PROJECT=dev-$PRJ_SUFFIX --param STAGE_PROJECT=stage-$PRJ_SUFFIX --param=WITH_CHE=$ARG_DEPLOY_CHE --param=EPHEMERAL=$ARG_EPHEMERAL -n cicd-$PRJ_SUFFIX 
+  oc $ARG_OC_OPS new-app -f $template -p DEV_PROJECT=dev-$PRJ_SUFFIX -p STAGE_PROJECT=stage-$PRJ_SUFFIX -p DEPLOY_CHE=$ARG_DEPLOY_CHE -p EPHEMERAL=$ARG_EPHEMERAL -p ENABLE_QUAY=$ARG_ENABLE_QUAY -p QUAY_USERNAME=$ARG_QUAY_USER -p QUAY_PASSWORD=$ARG_QUAY_PASS -n cicd-$PRJ_SUFFIX 
 }
 
 function make_idle() {

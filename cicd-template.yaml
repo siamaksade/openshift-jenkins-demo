@@ -21,7 +21,7 @@ parameters:
 - displayName: Deploy Eclipse Che
   description: Deploy Eclipse Che in order to use as an online IDE for changing code in this demo
   value: "false"
-  name: WITH_CHE
+  name: DEPLOY_CHE
   required: true
 - displayName: Ephemeral
   description: Use no persistent storage for Gogs and Nexus
@@ -33,6 +33,22 @@ parameters:
   generate: expression
   name: WEBHOOK_SECRET
   required: true
+- displayName: Integrate Quay.io
+  description: Integrate image build and deployment with Quay.io 
+  value: "false"
+  name: ENABLE_QUAY
+  required: true
+- displayName: Quay.io Username
+  description: Quay.io username to push the images to tasks-sample-app repository on your Quay.io account
+  name: QUAY_USERNAME
+- displayName: Quay.io Password
+  description: Quay.io password to push the images to tasks-sample-app repository on your Quay.io account
+  name: QUAY_PASSWORD
+- displayName: Quay.io Image Repository
+  description: Quay.io repository for pushing Tasks container images
+  name: QUAY_REPOSITORY
+  required: true
+  value: tasks-app
 objects:
 - apiVersion: v1
   groupNames: null
@@ -72,8 +88,10 @@ objects:
           value: ${DEV_PROJECT}
         - name: STAGE_PROJECT
           value: ${STAGE_PROJECT}
+        - name: ENABLE_QUAY
+          value: ${ENABLE_QUAY}
         jenkinsfile: |-
-          def version, mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
+          def mvnCmd = "mvn -s configuration/cicd-settings-nexus3.xml"
 
           pipeline {
             agent {
@@ -83,10 +101,6 @@ objects:
               stage('Build App') {
                 steps {
                   git branch: 'eap-7', url: 'http://gogs:3000/gogs/openshift-tasks.git'
-                  script {
-                      def pom = readMavenPom file: 'pom.xml'
-                      version = pom.version
-                  }
                   sh "${mvnCmd} install -DskipTests=true"
                 }
               }
@@ -138,8 +152,10 @@ objects:
                   }
 
                   script {
-                    openshift.withCluster() {
-                      openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:${version}")
+                    if (!env.ENABLE_QUAY.toBoolean()) {
+                      openshift.withCluster() {
+                        openshift.tag("${env.DEV_PROJECT}/tasks:latest", "${env.STAGE_PROJECT}/tasks:latest")
+                      }
                     }
                   }
                 }
@@ -155,9 +171,14 @@ objects:
                           openshift.selector('route', 'tasks').delete()
                         }
 
-                        openshift.newApp("tasks:${version}").narrow("svc").expose()
+                        if (env.ENABLE_QUAY.toBoolean()) {
+                          openshift.newApp("--name=tasks", "--docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest").narrow("is").delete()
+                        } else {
+                          openshift.newApp("tasks:latest")
+                        }
                         openshift.set("probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
                         openshift.set("probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
+                        openshift.selector("svc", "tasks").expose()
                       }
                     }
                   }
@@ -211,6 +232,39 @@ objects:
         <annotations/>
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+    skopeo-template: |-
+      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+        <inheritFrom></inheritFrom>
+        <name>skopeo</name>
+        <privileged>false</privileged>
+        <alwaysPullImage>false</alwaysPullImage>
+        <instanceCap>2147483647</instanceCap>
+        <idleMinutes>0</idleMinutes>
+        <label>skopeo</label>
+        <serviceAccount>jenkins</serviceAccount>
+        <nodeSelector></nodeSelector>
+        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
+        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
+          <memory>false</memory>
+        </workspaceVolume>
+        <volumes />
+        <containers>
+          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+            <name>jnlp</name>
+            <image>docker.io/siamaksade/jenkins-slave-skopeo-centos7</image>
+            <privileged>false</privileged>
+            <alwaysPullImage>false</alwaysPullImage>
+            <workingDir>/tmp</workingDir>
+            <command></command>
+            <args>${computer.jnlpmac} ${computer.name}</args>
+            <ttyEnabled>false</ttyEnabled>
+            <envVars/>
+          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+        </containers>
+        <envVars/>
+        <annotations/>
+        <imagePullSecrets/>
+      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
 # Setup Demo
 - apiVersion: batch/v1
   kind: Job
@@ -232,20 +286,34 @@ objects:
           - /bin/bash
           - -x
           - -c
-          - |
+          - |           
+            # adjust jenkins 
             oc set resources dc/jenkins --limits=cpu=2,memory=2Gi --requests=cpu=100m,memory=512Mi 
             oc label dc jenkins app=jenkins --overwrite 
 
+            # setup dev env
             oc import-image wildfly --from=openshift/wildfly-120-centos7 --confirm -n ${DEV_PROJECT} 
-            oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
-            oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
+            
+            if [ "${ENABLE_QUAY}" == "true" ] ; then
+              oc create secret generic quay-cicd-secret --type=string --from-literal=username=${QUAY_USERNAME} --from-literal=password=${QUAY_PASSWORD} -n ${CICD_NAMESPACE}
+              oc label --overwrite secret quay-cicd-secret credential.sync.jenkins.openshift.io=true -n ${CICD_NAMESPACE}
+              oc create secret docker-registry quay-cicd-secret --docker-server=quay.io --docker-username=${QUAY_USERNAME} --docker-password=${QUAY_PASSWORD} --docker-email=cicd@redhat.com -n ${DEV_PROJECT}
+              oc new-build --name=tasks --image-stream=wildfly:latest --binary=true --push-secret=quay-cicd-secret --to-docker --to='quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest' -n ${DEV_PROJECT}
+              oc new-app --name=tasks --docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest --allow-missing-images -n ${DEV_PROJECT}
+              oc delete is tasks -n ${DEV_PROJECT}
+            else
+              oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
+              oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
+              oc set triggers dc -l app=tasks --containers=tasks --from-image=tasks:latest --manual -n ${DEV_PROJECT}
+            fi
+            
             oc expose dc/tasks --port=8080 -n ${DEV_PROJECT}
             oc expose svc/tasks -n ${DEV_PROJECT}
             oc set probe dc/tasks --readiness --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
             oc set probe dc/tasks --liveness  --get-url=http://:8080/ws/demo/healthcheck --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10 -n ${DEV_PROJECT}
             oc rollout cancel dc/tasks -n ${DEV_PROJECT}
-            oc set triggers dc -l app=tasks --containers=tasks --from-image=tasks:latest --manual -n ${DEV_PROJECT}
 
+            # deploy gogs
             HOSTNAME=$(oc get route jenkins -o template --template='{{.spec.host}}' | sed "s/jenkins-${CICD_NAMESPACE}.//g")
             GOGS_HOSTNAME="gogs-$CICD_NAMESPACE.$HOSTNAME"
 
@@ -270,7 +338,7 @@ objects:
               oc delete pvc sonarqube-data -n $CICD_NAMESPACE
             fi
 
-            if [ "${WITH_CHE}" == "true" ] ; then
+            if [ "${DEPLOY_CHE}" == "true" ] ; then
               oc process -f https://raw.githubusercontent.com/minishift/minishift/master/addons/che/templates/che-single-user.yml \
                 --param PROJECT_NAME=$CICD_NAMESPACE \
                 --param DOMAIN_NAME=$HOSTNAME \
