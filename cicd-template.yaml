@@ -232,39 +232,6 @@ objects:
         <annotations/>
         <imagePullSecrets/>
       </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
-    skopeo-template: |-
-      <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
-        <inheritFrom></inheritFrom>
-        <name>skopeo</name>
-        <privileged>false</privileged>
-        <alwaysPullImage>false</alwaysPullImage>
-        <instanceCap>2147483647</instanceCap>
-        <idleMinutes>0</idleMinutes>
-        <label>skopeo</label>
-        <serviceAccount>jenkins</serviceAccount>
-        <nodeSelector></nodeSelector>
-        <customWorkspaceVolumeEnabled>false</customWorkspaceVolumeEnabled>
-        <workspaceVolume class="org.csanchez.jenkins.plugins.kubernetes.volumes.workspace.EmptyDirWorkspaceVolume">
-          <memory>false</memory>
-        </workspaceVolume>
-        <volumes />
-        <containers>
-          <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
-            <name>jnlp</name>
-            <image>docker.io/siamaksade/jenkins-slave-skopeo-centos7</image>
-            <privileged>false</privileged>
-            <alwaysPullImage>false</alwaysPullImage>
-            <workingDir>/tmp</workingDir>
-            <command></command>
-            <args>${computer.jnlpmac} ${computer.name}</args>
-            <ttyEnabled>false</ttyEnabled>
-            <envVars/>
-          </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
-        </containers>
-        <envVars/>
-        <annotations/>
-        <imagePullSecrets/>
-      </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
 # Setup Demo
 - apiVersion: batch/v1
   kind: Job
@@ -303,7 +270,6 @@ objects:
               oc new-app --name=tasks --docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest --allow-missing-images -n ${DEV_PROJECT}
               oc secrets link default quay-cicd-secret --for=pull -n ${DEV_PROJECT}
               oc secrets link default quay-cicd-secret --for=pull -n ${STAGE_PROJECT}
-              oc delete is tasks -n ${STAGE_PROJECT}
             else
               oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
               oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
