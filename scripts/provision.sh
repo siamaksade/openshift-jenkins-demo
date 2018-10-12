@@ -152,8 +152,8 @@ function deploy() {
 
   sleep 2
 
-  oc $ARG_OC_OPS policy add-role-to-group edit system:serviceaccount:cicd-$PRJ_SUFFIX -n dev-$PRJ_SUFFIX
-  oc $ARG_OC_OPS policy add-role-to-group edit system:serviceaccount:cicd-$PRJ_SUFFIX -n stage-$PRJ_SUFFIX
+  oc $ARG_OC_OPS policy add-role-to-group edit system:serviceaccounts:cicd-$PRJ_SUFFIX -n dev-$PRJ_SUFFIX
+  oc $ARG_OC_OPS policy add-role-to-group edit system:serviceaccounts:cicd-$PRJ_SUFFIX -n stage-$PRJ_SUFFIX
 
   if [ $LOGGEDIN_USER == 'system:admin' ] ; then
     oc $ARG_OC_OPS adm policy add-role-to-user admin $ARG_USERNAME -n dev-$PRJ_SUFFIX >/dev/null 2>&1
