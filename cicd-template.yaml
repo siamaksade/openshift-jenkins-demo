@@ -172,7 +172,7 @@ objects:
                         }
 
                         if (env.ENABLE_QUAY.toBoolean()) {
-                          openshift.newApp("--name=tasks", "--docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest").narrow("is").delete()
+                          openshift.newApp("--name=tasks", "--docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest")
                         } else {
                           openshift.newApp("tasks:latest")
                         }
@@ -295,12 +295,11 @@ objects:
             oc import-image wildfly --from=openshift/wildfly-120-centos7 --confirm -n ${DEV_PROJECT} 
             
             if [ "${ENABLE_QUAY}" == "true" ] ; then
-              oc create secret generic quay-cicd-secret --type=string --from-literal=username=${QUAY_USERNAME} --from-literal=password=${QUAY_PASSWORD} -n ${CICD_NAMESPACE}
+              oc create secret generic quay-cicd-secret --type=string --from-literal="username=${QUAY_USERNAME}" --from-literal="password="${QUAY_PASSWORD}" -n ${CICD_NAMESPACE}
               oc label --overwrite secret quay-cicd-secret credential.sync.jenkins.openshift.io=true -n ${CICD_NAMESPACE}
-              oc create secret docker-registry quay-cicd-secret --docker-server=quay.io --docker-username=${QUAY_USERNAME} --docker-password=${QUAY_PASSWORD} --docker-email=cicd@redhat.com -n ${DEV_PROJECT}
+              oc create secret docker-registry quay-cicd-secret --docker-server=quay.io --docker-username="${QUAY_USERNAME}" --docker-password="${QUAY_PASSWORD}" --docker-email=cicd@redhat.com -n ${DEV_PROJECT}
               oc new-build --name=tasks --image-stream=wildfly:latest --binary=true --push-secret=quay-cicd-secret --to-docker --to='quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest' -n ${DEV_PROJECT}
               oc new-app --name=tasks --docker-image=quay.io/${QUAY_USERNAME}/${QUAY_REPOSITORY}:latest --allow-missing-images -n ${DEV_PROJECT}
-              oc delete is tasks -n ${DEV_PROJECT}
             else
               oc new-build --name=tasks --image-stream=wildfly:latest --binary=true -n ${DEV_PROJECT}
               oc new-app tasks:latest --allow-missing-images -n ${DEV_PROJECT}
