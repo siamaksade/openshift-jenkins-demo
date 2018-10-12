@@ -125,7 +125,7 @@ your own names and use the following to create the demo:
 
 ![](images/sonarqube-analysis.png?raw=true)
 
-![](images/quay-claire.png.png?raw=true)
+![](images/quay-claire.png?raw=true)
 
 * Clone and checkout the _eap-7_ branch of the _openshift-tasks_ git repository and using an IDE (e.g. JBoss Developer Studio), remove the ```@Ignore``` annotation from ```src/test/java/org/jboss/as/quickstarts/tasksrs/service/UserResourceTest.java``` test methods to enable the unit tests. Commit and push to the git repo.
 
