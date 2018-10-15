@@ -84,6 +84,12 @@ your own names and use the following to create the demo:
 
 * If Maven fails with `/opt/rh/rh-maven33/root/usr/bin/mvn: line 9:   298 Killed` (e.g. during static analysis), you are running out of memory and need more memory for OpenShift.
 
+* If running into `Permission denied` issues on minishift or CDK, run the following to adjust minishift persistent volume permissions:
+  ```
+  minishift ssh
+  chmod 777 -R /var/lib/minishift/
+  ```
+
 ## Demo Guide
 
 
