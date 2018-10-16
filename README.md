@@ -155,3 +155,6 @@ If you deploy the demo template using `DEPLOY_CHE=true` paramter, or the deploy 
 
 Follow these [instructions](docs/using-eclipse-che.md) to use Eclipse Che for editing code in the above demo flow.  
 
+# Watch on YouTube
+
+[![Continuous Delivery with OpenShift](images/youtube.png?raw=true)](https://youtu.be/_xh4XPkdXe0)
