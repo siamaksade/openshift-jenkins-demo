@@ -55,6 +55,9 @@ quay.io credentials:
   ```
   ./provision.sh deploy --enable-quay --quay-username=quay_username --quay-password=quay_password
   ```
+In that case, the pipeline would create an image repository called `tasks-app` (default name but configurable) 
+on your Quay.io account and use that instead of the integrated OpenShift 
+registry, for pushing the built images and also pulling images for deployment. 
   
 ## Manual Deploy on OpenShift
 Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
@@ -86,7 +89,6 @@ your own names and use the following to create the demo:
   ```shell
   oc new-app -n cicd -f cicd-template.yaml --param DEV_PROJECT=dev-project-name --param STAGE_PROJECT=stage-project-name
   ```
-
 
 ## Troubleshooting
 
@@ -149,57 +151,7 @@ your own names and use the following to create the demo:
 
 ## Using Eclipse Che for Editing Code
 
-If you deploy the demo template using `WITH_CHE=true` paramter, or the deploy script and use `--deploy-che` flag, then an [Eclipse Che](https://www.eclipse.org/che/) instances will be deployed within the CI/CD project which allows you to use the Eclipse Che web-based IDE for editing code in this demo.
+If you deploy the demo template using `DEPLOY_CHE=true` paramter, or the deploy script and use `--deploy-che` flag, then an [Eclipse Che](https://www.eclipse.org/che/) instances will be deployed within the CI/CD project which allows you to use the Eclipse Che web-based IDE for editing code in this demo.
 
+Follow these [instructions](docs/using-eclipse-che.md) to use Eclipse Che for editing code in the above demo flow.  
 
-Here is a step-by-step guide for editing and pushing the code to the Gogs repository (step 6) using Eclipse Che.
-
-Click on Eclipse Che route url in the CI/CD project which takes you to the workspace administration page. Select the *Java* stack and click on the *Create* button to create a workspace for yourself.
-
-![](images/che-create-workspace.png?raw=true)
-
-Once the workspace is created, click on *Open* button to open your workspace in the Eclipse Che in the browser.
-
-![](images/che-open-workspace.png?raw=true)
-
-It might take a little while before your workspace is set up and ready to be used in your browser. Once it's ready, click on **Import Project...** in order to import the `openshift-tasks` Gogs repository into your workspace.
-
-![](images/che-import-project.png?raw=true)
-
-Enter the Gogs repository HTTPS url for `openshift-tasks` as the Git repository url with Git username and password in the 
-url: <br/>
-`http://gogs:gogs@[gogs-hostname]/gogs/openshift-tasks.git`
-
- You can find the repository url in Gogs web console. Make sure the check the **Branch** field and enter `eap-7` in order to clone the `eap-7` branch which is used in this demo. Click on **Import**
-
-![](images/che-import-git.png?raw=true)
-
-Change the project configuration to  **Maven** and then click **Save**
-
-![](images/che-import-maven.png?raw=true)
-
-Configure you name and email to be stamped on your Git commity by going to **Profile > Preferences > Git > Committer**.
-
-![](images/che-configure-git-name.png?raw=true)
-
-Follow the steps 6-10 in the above guide to edit the code in your workspace. 
-
-![](images/che-edit-file.png?raw=true)
-
-In order to run the unit tests within Eclipse Che, wait till all dependencies resolve first. To make sure they are resolved, run a Maven build using the commands palette icon or by clicking on **Run > Commands Palette > build**. 
-
-Make sure you run the build again, after fixing the bug in the service class.
-
-Run the unit tests in the IDE after you have corrected the issue by right clicking on the unit test class and then **Run Test > Run JUnit Test**
-
-![](images/che-run-tests.png?raw=true)
-
-![](images/che-junit-success.png?raw=true)
-
-
-Click on **Git > Commit** to commit the changes to the `openshift-tasks` git repository. Make sure **Push committed changes to ...** is checked. Click on **Commit** button.
-
-![](images/che-commit.png?raw=true)
-
-As soon the changes are committed to the git repository, a new instances of pipeline gets triggers to test and deploy the 
-code changes.
