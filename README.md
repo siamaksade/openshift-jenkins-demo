@@ -53,7 +53,7 @@ If you want to use Quay.io as an external registry with this demo, Go to quay.io
 quay.io credentials:
 
   ```
-  ./provision.sh deploy --enable-quay --quay-username=quay_username --quay-password=quay_password
+  ./provision.sh deploy --enable-quay --quay-username quay_username --quay-password quay_password
   ```
 In that case, the pipeline would create an image repository called `tasks-app` (default name but configurable) 
 on your Quay.io account and use that instead of the integrated OpenShift 
