@@ -290,4 +290,3 @@ popd >/dev/null
 
 END=`date +%s`
 echo "(Completed in $(( ($END - $START)/60 )) min $(( ($END - $START)%60 )) sec)"
-echo 
