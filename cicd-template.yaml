@@ -358,16 +358,6 @@ objects:
               oc new-app -f https://raw.githubusercontent.com/siamaksade/sonarqube/master/sonarqube-persistent-template.yml --param=SONARQUBE_MEMORY_LIMIT=6Gi
             fi
 
-            if [ "${DEPLOY_CHE}" == "true" ] ; then
-              oc process -f https://raw.githubusercontent.com/minishift/minishift/master/addons/che/templates/che-single-user.yml \
-                --param PROJECT_NAME=$CICD_NAMESPACE \
-                --param DOMAIN_NAME=$HOSTNAME \
-                --param OPENSHIFT_OAUTH_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-                | oc create -f -
-
-              oc set resources dc/che --limits=cpu=1,memory=2Gi --requests=cpu=200m,memory=512Mi
-            fi
-
             if [ "${EPHEMERAL}" == "true" ] ; then
               oc new-app -f https://raw.githubusercontent.com/OpenShiftDemos/nexus/master/nexus3-template.yaml --param=NEXUS_VERSION=3.13.0 --param=MAX_MEMORY=2Gi
             else

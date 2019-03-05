@@ -148,7 +148,14 @@ GITHUB_REF=${GITHUB_REF:-ocp-3.11}
 function deploy() {
   oc $ARG_OC_OPS new-project dev-$PRJ_SUFFIX   --display-name="Tasks - Dev"
   oc $ARG_OC_OPS new-project stage-$PRJ_SUFFIX --display-name="Tasks - Stage"
-  oc $ARG_OC_OPS new-project cicd-$PRJ_SUFFIX  --display-name="CI/CD"
+
+  if [ $ARG_DEPLOY_CHE ] ; then
+    curl -fsSL https://raw.githubusercontent.com/eclipse/che/master/deploy/openshift/deploy_che.sh -o deploy_che.sh
+    chmod +x ./deploy_che.sh
+    ./deploy_che.sh -s -p=cicd-$PRJ_SUFFIX --setup-ocp-oauth --rolling --deploy-che-plugin-registry
+  else
+    oc $ARG_OC_OPS new-project cicd-$PRJ_SUFFIX  --display-name="CI/CD"
+  fi
 
   sleep 2
 
@@ -283,4 +290,3 @@ popd >/dev/null
 
 END=`date +%s`
 echo "(Completed in $(( ($END - $START)/60 )) min $(( ($END - $START)%60 )) sec)"
-echo 
