@@ -78,9 +78,6 @@ And then deploy the demo:
   ```
   # Deploy Demo
   oc new-app -n cicd -f cicd-template.yaml
-
-  # Deploy Demo woth Eclipse Che
-  oc new-app -n cicd -f cicd-template.yaml --param=DEPLOY_CHE=true
   ```
 
 To use custom project names, change `cicd`, `dev` and `stage` in the above commands to
