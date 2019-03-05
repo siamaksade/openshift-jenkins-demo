@@ -424,7 +424,7 @@ objects:
               cat /tmp/curl.log
               exit 255
             fi
-          image: openshift/origin:v3.11
+          image: quay.io/openshift/origin-cli:v4.0
           name: cicd-demo-installer-job
           resources: {}
           terminationMessagePath: /dev/termination-log
