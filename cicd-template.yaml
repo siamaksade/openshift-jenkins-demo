@@ -359,11 +359,14 @@ objects:
             fi
 
             if [ "${DEPLOY_CHE}" == "true" ] ; then
-              oc process -f https://raw.githubusercontent.com/minishift/minishift/master/addons/che/templates/che-single-user.yml \
-                --param PROJECT_NAME=$CICD_NAMESPACE \
-                --param DOMAIN_NAME=$HOSTNAME \
-                --param OPENSHIFT_OAUTH_TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-                | oc create -f -
+              oc process -f https://raw.githubusercontent.com/minishift/minishift/master/addons/che/templates/che-workspace-service-account.yaml \
+                  --param SERVICE_ACCOUNT_NAMESPACE=$CICD_NAMESPACE --param=SERVICE_ACCOUNT_NAME=che-workspace | oc create -f -
+
+              oc process -f https://raw.githubusercontent.com/minishift/minishift/master/addons/che/templates/che-server-template.yaml \
+                --param ROUTING_SUFFIX=$HOSTNAME \
+                --param CHE_MULTIUSER=false \
+                --param CHE_INFRA_OPENSHIFT_PROJECT=$CICD_NAMESPACE \
+                --param CHE_INFRA_KUBERNETES_SERVICE__ACCOUNT__NAME=che-workspace | oc create -f -
 
               oc set resources dc/che --limits=cpu=1,memory=2Gi --requests=cpu=200m,memory=512Mi
             fi
