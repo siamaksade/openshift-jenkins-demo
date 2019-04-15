@@ -358,6 +358,7 @@ objects:
               oc new-app -f https://raw.githubusercontent.com/siamaksade/sonarqube/master/sonarqube-persistent-template.yml --param=SONARQUBE_MEMORY_LIMIT=2Gi
             fi
 
+            oc set resources dc/sonardb --limits=cpu=0,memory=0 --requests=cpu=0,memory=0
             oc set resources dc/sonarqube --limits=cpu=0,memory=0 --requests=cpu=0,memory=0
 
             if [ "${DEPLOY_CHE}" == "true" ] ; then
