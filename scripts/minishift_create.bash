@@ -11,13 +11,18 @@ RHN_USER=cbrandt1
 CPUS=12
 MEMORY=16384
 OCP_TAG=v3.11.98
-IMAGES="openshiftdemos/sonarqube:7.0 sonatype/nexus3:3.13.0 openshift/wildfly-120-centos openshiftdemos/gogs:0.11.34"
+IMAGES="openshiftdemos/sonarqube:7.0 sonatype/nexus3:3.13.0 docker.io/openshift/wildfly-120-centos7 \
+        openshiftdemos/gogs:0.11.34 eclipse/che-server:nightly docker.io/siamaksade/sonarqube:latest \
+        registry.access.redhat.com/rhscl/postgresql-96-rhel7"
 GIT_URL=
 
 function setup_minishift () {
-    echo " TODO: dsetup minishift In progress"
+    echo " TODO: setup minishift In progress"
+    ## Create and enable stability
     # minishift setup-cdk
-    # minishift profile set dev_sec_ops-${OCP_TAG}
+    minishift profile set devsecops
+    minishift addons enable xpaas
+    minishift addons enable admin-user
 }
 
 function start_minishift () {
@@ -28,14 +33,16 @@ function pull_images () {
 
     for image in ${IMAGES}
     do
+        echo " Pulling ${image} image..."
         minishift ssh -- docker pull ${image}
-    # minishift ssh docker pull openshiftdemos/gogs:0.11.34 && minishift ssh docker pull openshiftdemos/sonarqube:7.0 && minishift ssh docker pull sonatype/nexus3:3.13.0 && minishift ssh docker pull openshift/wildfly-120-cento
     done
 }
 
+sleep 10 
+
 function setup_cicd () {
-    minishift login -u system:admin --insecure-skip-tls-verify=true
-    oc adm policy add-role-to-user cluster-admin admin
+    oc login -u system:admin --insecure-skip-tls-verify=true
+    oc adm policy add-role-to-user -- cluster-admin admin
     bash ./scripts/provision.sh deploy --user admin --deploy-che
 }
 
