@@ -1,0 +1,9 @@
+# Name: stability
+# Description: Fixes stability issues under load, see https://github.com/minishift/minishift/issues/2664
+# OpenShift-Version: >3.6.0
+
+docker container update origin -c 4096
+
+echo
+echo Increased priority of the origin container
+echo
