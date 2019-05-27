@@ -1,0 +1,26 @@
+---
+- name: geerlingguy.repo-epel
+  src: https://github.com/geerlingguy/ansible-role-repo-epel.git
+  scm: git
+- name: geerlingguy.jenkins
+- name: geerlingguy.git
+  src: https://github.com/geerlingguy/ansible-role-jenkins.git
+  scm: git
+- name: tecris.maven
+  src: https://github.com/tecris/ansible-maven.git
+  scm: git
+- name: geerlingguy.ansible
+  src: https://github.com/geerlingguy/ansible-role-ansible.git
+  scm: git
+- name: geerlingguy.java
+  src: https://github.com/geerlingguy/ansible-role-java.git
+  scm: git
+- name: savoirfairelinux.nexus3-oss
+  src: https://github.com/savoirfairelinux/ansible-nexus3-oss.git
+  scm: git
+- name: wtanaka.unzip
+  src: https://github.com/wtanaka/ansible-role-unzip.git
+  scm: git
+- name: geerlingguy.sonar
+  src: https://github.com/geerlingguy/ansible-role-sonar.git
+  scm: git
