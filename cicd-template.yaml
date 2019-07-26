@@ -365,6 +365,7 @@ objects:
               oc process -f https://raw.githubusercontent.com/minishift/minishift/master/addons/che/templates/che-server-template.yaml \
                 --param ROUTING_SUFFIX=$HOSTNAME \
                 --param CHE_MULTIUSER=false \
+                --param CHE_VERSION="6.19.0" \
                 --param CHE_INFRA_OPENSHIFT_PROJECT=$CICD_NAMESPACE \
                 --param CHE_INFRA_KUBERNETES_SERVICE__ACCOUNT__NAME=che-workspace | oc create -f -
 
