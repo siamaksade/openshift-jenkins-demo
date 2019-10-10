@@ -27,7 +27,6 @@ function usage() {
     echo "   --user [username]          Optional    The admin user for the demo projects. Required if logged in as system:admin"
     echo "   --project-suffix [suffix]  Optional    Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
     echo "   --ephemeral                Optional    Deploy demo without persistent storage. Default false"
-    echo "   --enable-che               Optional    Deploy Eclipse Che as an online IDE for code changes. Default false"
     echo "   --oc-options               Optional    oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
     echo
 }
@@ -37,7 +36,6 @@ ARG_PROJECT_SUFFIX=
 ARG_COMMAND=
 ARG_EPHEMERAL=false
 ARG_OC_OPS=
-ARG_DEPLOY_CHE=false
 ARG_ENABLE_QUAY=false
 ARG_QUAY_USER=
 ARG_QUAY_PASS=
@@ -112,9 +110,6 @@ while :; do
         --ephemeral)
             ARG_EPHEMERAL=true
             ;;
-        --enable-che|--deploy-che)
-            ARG_DEPLOY_CHE=true
-            ;;
         -h|--help)
             usage
             exit 0
@@ -175,7 +170,7 @@ function deploy() {
 
   local template=https://raw.githubusercontent.com/$GITHUB_ACCOUNT/openshift-cd-demo/$GITHUB_REF/cicd-template.yaml
   echo "Using template $template"
-  oc $ARG_OC_OPS new-app -f $template -p DEV_PROJECT=dev-$PRJ_SUFFIX -p STAGE_PROJECT=stage-$PRJ_SUFFIX -p DEPLOY_CHE=$ARG_DEPLOY_CHE -p EPHEMERAL=$ARG_EPHEMERAL -p ENABLE_QUAY=$ARG_ENABLE_QUAY -p QUAY_USERNAME=$ARG_QUAY_USER -p QUAY_PASSWORD=$ARG_QUAY_PASS -n cicd-$PRJ_SUFFIX 
+  oc $ARG_OC_OPS new-app -f $template -p DEV_PROJECT=dev-$PRJ_SUFFIX -p STAGE_PROJECT=stage-$PRJ_SUFFIX -p EPHEMERAL=$ARG_EPHEMERAL -p ENABLE_QUAY=$ARG_ENABLE_QUAY -p QUAY_USERNAME=$ARG_QUAY_USER -p QUAY_PASSWORD=$ARG_QUAY_PASS -n cicd-$PRJ_SUFFIX 
 }
 
 function make_idle() {
