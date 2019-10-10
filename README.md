@@ -37,16 +37,17 @@ The application used in this pipeline is a JAX-RS application which is available
 ## Prerequisites
 * 10+ GB memory
 
-## Deploy on RHPDS
 
-If you have access to RHPDS, provisioning of this demo is automated via the service catalog under **OpenShift Demos &rarr; OpenShift CI/CD for Monolith**. If you don't know what RHPDS is, read the instructions in the next section.
+# Get OpenShift 4
+
+[Download and install CodeReady Containers](https://developers.redhat.com/products/codeready-containers/overview) in order to create a local OpenShift 4 cluster on your workstation. Otherwise [create an OpenShift 4 cluster](https://try.openshift.com) on the public cloud or the infrastructure of your choice.
 
 ## Automated Deploy on OpenShift
 You can se the `scripts/provision.sh` script provided to deploy the entire demo:
 
   ```
   ./provision.sh --help
-  ./provision.sh deploy --enable-che --ephemeral # with Eclipse Che
+  ./provision.sh deploy 
   ./provision.sh delete 
   ```
 If you want to use Quay.io as an external registry with this demo, Go to quay.io and register for free. Then deploy the demo providing your 
@@ -60,7 +61,8 @@ on your Quay.io account and use that instead of the integrated OpenShift
 registry, for pushing the built images and also pulling images for deployment. 
   
 ## Manual Deploy on OpenShift
-Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
+
+Create the following projects for CI/CD components, Dev and Stage environments:
 
   ```shell
   # Create Projects
@@ -153,9 +155,10 @@ This demo by default uses the WildFly community image. You can use the JBoss EAP
 
 ## Using Eclipse Che for Editing Code
 
-If you deploy the demo template using `DEPLOY_CHE=true` paramter, or the deploy script and use `--deploy-che` flag, then an [Eclipse Che](https://www.eclipse.org/che/) instances will be deployed within the CI/CD project which allows you to use the Eclipse Che web-based IDE for editing code in this demo.
+You can install Eclipse Che on OpenShift 4 using the OperatorHub. Follow the [Installing Che on OpenShift 4 from OperatorHub](https://www.eclipse.org/che/docs/che-7/installing-che-on-openshift-4-from-operatorhub/) docs in order to install Eclipse Che 7. Alternatively, if you OpenShift cluster is accessible over the internet, you can use the hosted Eclipse Che service at https://che.openshift.io .
 
-Follow these [instructions](docs/using-eclipse-che.md) to use Eclipse Che for editing code in the above demo flow.  
+
+You can then follow these [instructions](docs/using-eclipse-che.md) to use Eclipse Che for editing code in the above demo flow.  
 
 # Watch on YouTube
 
