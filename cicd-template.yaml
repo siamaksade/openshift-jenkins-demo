@@ -435,7 +435,7 @@ objects:
             oc label dc jenkins "app.kubernetes.io/part-of"="jenkins" --overwrite
             oc label dc nexus "app.kubernetes.io/part-of"="nexus" --overwrite
             oc label dc gogs "app.kubernetes.io/part-of"="gogs" --overwrite
-            oc label dc -postgresql "app.kubernetes.io/part-of"="gogs" --overwrite
+            oc label dc gogs-postgresql "app.kubernetes.io/part-of"="gogs" --overwrite
 
           image: quay.io/openshift/origin-cli:v4.0
           name: cicd-demo-installer-job
