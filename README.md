@@ -159,7 +159,3 @@ You can install Eclipse Che on OpenShift 4 using the OperatorHub. Follow the [In
 
 
 You can then follow these [instructions](docs/using-eclipse-che.md) to use Eclipse Che for editing code in the above demo flow.  
-
-# Watch on YouTube
-
-[![Continuous Delivery with OpenShift](images/youtube.png?raw=true)](https://youtu.be/_xh4XPkdXe0)
