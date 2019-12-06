@@ -372,21 +372,34 @@ objects:
 
             oc rollout status dc gogs
 
-            _RETURN=$(curl -o /tmp/curl.log -sL --post302 -w "%{http_code}" http://$GOGS_SVC:3000/user/sign_up \
-              --form user_name=$GOGS_USER \
-              --form password=$GOGS_PWD \
-              --form retype=$GOGS_PWD \
-              --form email=admin@gogs.com)
-
-            sleep 5
-
-            if [ $_RETURN != "200" ] && [ $_RETURN != "302" ] ; then
-              echo "ERROR: Failed to create Gogs admin"
-              cat /tmp/curl.log
-              exit 255
-            fi
-
+            # Even though the rollout is complete gogs isn't always ready to create the admin user
             sleep 10
+
+            # Try 10 times to create the admin user. Fail after that.
+            for i in {1..10};
+            do
+
+              _RETURN=$(curl -o /tmp/curl.log -sL --post302 -w "%{http_code}" http://$GOGS_SVC:3000/user/sign_up \
+                --form user_name=$GOGS_USER \
+                --form password=$GOGS_PWD \
+                --form retype=$GOGS_PWD \
+                --form email=admin@gogs.com)
+
+              if [ $_RETURN == "200" ] || [ $_RETURN == "302" ]
+              then
+                echo "SUCCESS: Created gogs admin user"
+                break
+              elif [ $_RETURN != "200" ] && [ $_RETURN != "302" ] && [ $i == 10 ]; then
+                echo "ERROR: Failed to create Gogs admin"
+                cat /tmp/curl.log
+                exit 255
+              fi
+
+              # Sleep between each attempt
+              sleep 10
+
+            done
+
 
             cat <<EOF > /tmp/data.json
             {
