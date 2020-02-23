@@ -1,6 +1,6 @@
-*For other versions of OpenShift, follow the instructions in the corresponding branch.
+*For other versions of OpenShift, follow the instructions in the corresponding branch e.g. ocp-3.11, ocp-3.10, etc	*For other versions of OpenShift, follow the instructions in the corresponding branch.
 
-# CI/CD Demo - OpenShift Container Platform 4.2
+# CI/CD Demo - OpenShift Container Platform 3.11
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus, SonarQube and Eclipse Che on OpenShift. 
 
@@ -38,9 +38,8 @@ The application used in this pipeline is a JAX-RS application which is available
 * 10+ GB memory
 
 
-# Get OpenShift 4
-
-[Download and install CodeReady Containers](https://developers.redhat.com/products/codeready-containers/overview) in order to create a local OpenShift 4 cluster on your workstation. Otherwise [create an OpenShift 4 cluster](https://try.openshift.com) on the public cloud or the infrastructure of your choice.
+## Deploy on RHPDS	
+If you have access to RHPDS, provisioning of this demo is automated via the service catalog under **OpenShift Demos &rarr; OpenShift CI/CD for Monolith**. If you don't know what RHPDS is, read the instructions in the next section.	# Get OpenShift 4
 
 ## Automated Deploy on OpenShift
 You can se the `scripts/provision.sh` script provided to deploy the entire demo:
@@ -62,7 +61,7 @@ registry, for pushing the built images and also pulling images for deployment.
   
 ## Manual Deploy on OpenShift
 
-Create the following projects for CI/CD components, Dev and Stage environments:
+Follow these [instructions](docs/local-cluster.md) in order to create a local OpenShift cluster. Otherwise using your current OpenShift cluster, create the following projects for CI/CD components, Dev and Stage environments:
 
   ```shell
   # Create Projects
