@@ -79,6 +79,7 @@ And then deploy the demo:
 
   ```
   # Deploy Demo
+  oc new-app jenkins-ephemeral -n cicd  
   oc new-app -n cicd -f cicd-template.yaml
   ```
 
