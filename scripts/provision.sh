@@ -24,7 +24,7 @@ function usage() {
     echo "   --enable-quay              Optional    Enable integration of build and deployments with quay.io"
     echo "   --quay-username            Optional    quay.io username to push the images to a quay.io account. Required if --enable-quay is set"
     echo "   --quay-password            Optional    quay.io password to push the images to a quay.io account. Required if --enable-quay is set"
-    echo "   --user [username]          Optional    The admin user for the demo projects. Required if logged in as system:admin"
+    echo "   --user [username]          Optional    The admin user for the demo projects. Required if logged in as kube:admin"
     echo "   --project-suffix [suffix]  Optional    Suffix to be added to demo project names e.g. ci-SUFFIX. If empty, user will be used as suffix"
     echo "   --ephemeral                Optional    Deploy demo without persistent storage. Default false"
     echo "   --oc-options               Optional    oc client options to pass to all oc commands e.g. --server https://my.openshift.com"
@@ -151,7 +151,7 @@ function deploy() {
   oc $ARG_OC_OPS policy add-role-to-group edit system:serviceaccounts:cicd-$PRJ_SUFFIX -n stage-$PRJ_SUFFIX
   oc $ARG_OC_OPS policy add-role-to-group edit system:serviceaccounts:cicd-$PRJ_SUFFIX -n cicd-$PRJ_SUFFIX
 
-  if [ $LOGGEDIN_USER == 'system:admin' ] ; then
+  if [ $LOGGEDIN_USER == 'kube:admin' ] ; then
     oc $ARG_OC_OPS adm policy add-role-to-user admin $ARG_USERNAME -n dev-$PRJ_SUFFIX >/dev/null 2>&1
     oc $ARG_OC_OPS adm policy add-role-to-user admin $ARG_USERNAME -n stage-$PRJ_SUFFIX >/dev/null 2>&1
     oc $ARG_OC_OPS adm policy add-role-to-user admin $ARG_USERNAME -n cicd-$PRJ_SUFFIX >/dev/null 2>&1
@@ -197,7 +197,7 @@ function make_unidle() {
 }
 
 function set_default_project() {
-  if [ $LOGGEDIN_USER == 'system:admin' ] ; then
+  if [ $LOGGEDIN_USER == 'kube:admin' ] ; then
     oc $ARG_OC_OPS project default >/dev/null
   fi
 }
@@ -222,14 +222,14 @@ function echo_header() {
 # MAIN: DEPLOY DEMO                                                            #
 ################################################################################
 
-if [ "$LOGGEDIN_USER" == 'system:admin' ] && [ -z "$ARG_USERNAME" ] ; then
+if [ "$LOGGEDIN_USER" == 'kube:admin' ] && [ -z "$ARG_USERNAME" ] ; then
   # for verify and delete, --project-suffix is enough
   if [ "$ARG_COMMAND" == "delete" ] || [ "$ARG_COMMAND" == "verify" ] && [ -z "$ARG_PROJECT_SUFFIX" ]; then
-    echo "--user or --project-suffix must be provided when running $ARG_COMMAND as 'system:admin'"
+    echo "--user or --project-suffix must be provided when running $ARG_COMMAND as 'kube:admin'"
     exit 255
   # deploy command
   elif [ "$ARG_COMMAND" != "delete" ] && [ "$ARG_COMMAND" != "verify" ] ; then
-    echo "--user must be provided when running $ARG_COMMAND as 'system:admin'"
+    echo "--user must be provided when running $ARG_COMMAND as 'kube:admin'"
     exit 255
   fi
 fi

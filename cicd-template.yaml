@@ -336,13 +336,11 @@ objects:
             if [ "${EPHEMERAL}" == "true" ] ; then
               oc new-app -f https://raw.githubusercontent.com/siamaksade/gogs/master/gogs-template-ephemeral.yaml \
                   --param=GOGS_VERSION=0.11.34 \
-                  --param=DATABASE_VERSION=9.6 \
                   --param=HOSTNAME=$GOGS_HOSTNAME \
                   --param=SKIP_TLS_VERIFY=true
             else
               oc new-app -f https://raw.githubusercontent.com/siamaksade/gogs/master/gogs-template.yaml \
                   --param=GOGS_VERSION=0.11.34 \
-                  --param=DATABASE_VERSION=9.6 \
                   --param=HOSTNAME=$GOGS_HOSTNAME \
                   --param=SKIP_TLS_VERIFY=true
             fi
@@ -350,9 +348,9 @@ objects:
             sleep 5
 
             if [ "${EPHEMERAL}" == "true" ] ; then
-              oc new-app -f https://raw.githubusercontent.com/siamaksade/sonarqube/master/sonarqube-template.yml --param=SONARQUBE_MEMORY_LIMIT=2Gi
+              oc new-app -f https://raw.githubusercontent.com/siamaksade/sonarqube/master/sonarqube-template.yml --param=SONARQUBE_MEMORY_LIMIT=2Gi -p SONAR_IMAGE=docker.io/sonarqube:8-developer
             else
-              oc new-app -f https://raw.githubusercontent.com/siamaksade/sonarqube/master/sonarqube-persistent-template.yml --param=SONARQUBE_MEMORY_LIMIT=2Gi
+              oc new-app -f https://raw.githubusercontent.com/siamaksade/sonarqube/master/sonarqube-persistent-template.yml --param=SONARQUBE_MEMORY_LIMIT=2Gi -p SONAR_IMAGE=docker.io/sonarqube:8-developer
             fi
 
             oc set resources dc/sonardb --limits=cpu=200m,memory=512Mi --requests=cpu=50m,memory=128Mi
@@ -443,14 +441,9 @@ objects:
               exit 255
             fi
 
-            oc label dc sonarqube "app.kubernetes.io/part-of"="sonarqube" --overwrite
-            oc label dc sonardb "app.kubernetes.io/part-of"="sonarqube" --overwrite
             oc label dc jenkins "app.kubernetes.io/part-of"="jenkins" --overwrite
             oc label dc nexus "app.kubernetes.io/part-of"="nexus" --overwrite
-            oc label dc gogs "app.kubernetes.io/part-of"="gogs" --overwrite
-            oc label dc gogs-postgresql "app.kubernetes.io/part-of"="gogs" --overwrite
-
-          image: quay.io/openshift/origin-cli:v4.0
+          image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
           name: cicd-demo-installer-job
           resources: {}
           terminationMessagePath: /dev/termination-log
