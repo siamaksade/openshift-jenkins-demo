@@ -1,5 +1,6 @@
-*For other versions of OpenShift, follow the instructions in the corresponding branch.
-
+> For a CI/CD demo using Tekton Pipelines and Argo CD on OpenShift refer to:
+> https://github.com/siamaksade/openshift-cicd-demo
+ 
 # CI/CD Demo - OpenShift Container Platform 4.6
 
 This repository includes the infrastructure and pipeline definition for continuous delivery using Jenkins, Nexus, SonarQube and Eclipse Che on OpenShift. 
