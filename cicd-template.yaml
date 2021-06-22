@@ -108,7 +108,7 @@ objects:
               stage('Code Analysis') {
                 steps {
                   script {
-                    sh "${mvnCmd} install sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
+                    sh "${mvnCmd} install sonar:sonar -Dsonar.login=admin -Dsonar.password=admin -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
                   }
                 }
               }
