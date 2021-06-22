@@ -94,7 +94,7 @@ your own names and use the following to create the demo:
 # JBoss EAP vs WildFly
 
 This demo by default uses the WildFly community image. You can use the JBoss EAP enterprise images provide by Red Hat by simply editing the 
-`tasks` build config in the _Tasks - Dev_ project and changing the builder image from `wildfly` to `jboss-eap70-openshift:1.5`. The demo would work exactly the same and would build the images using the JBoss EAP builder image. If using Quay, be sure not to leave the JBoss EAP images on a publicly accessible image repository. 
+`tasks` build config in the _Tasks - Dev_ project and changing the builder image from `wildfly` to `jboss-eap73-openshift` and the namespace to `openshift`. The demo would work exactly the same and would build the images using the JBoss EAP builder image. If using Quay, be sure not to leave the JBoss EAP images on a publicly accessible image repository. 
 
 ## Troubleshooting
 
