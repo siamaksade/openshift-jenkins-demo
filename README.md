@@ -120,6 +120,20 @@ This demo by default uses the WildFly community image. You can use the JBoss EAP
 
     You can also explore the pipeline job in Jenkins by clicking on the Jenkins route url, logging in with the OpenShift credentials and clicking on _tasks-pipeline_ and _Configure_.
 
+* You need to pass an authentication token using the sonar.login property in your pipeline "Code Analysis" stage.
+
+  **Generating a token**
+  
+  You can generate new tokens at User > My Account > Security.
+
+  The form at the bottom of the page allows you to generate new tokens. Once you click the Generate button, you will see the token value. Copy it immediately; once you dismiss the notification you will not be able to retrieve it.
+
+  After get the token change the mvn command with the following command:
+  
+  ```
+  sh "${mvnCmd} install sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true -Dsonar.login=<myAuthenticationToken>"
+  ```
+
 * Run an instance of the pipeline by starting the _tasks-pipeline_ in OpenShift or Jenkins.
 
 * During pipeline execution, verify a new Jenkins slave pod is created within _CI/CD_ project to execute the pipeline.
